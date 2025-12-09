@@ -410,18 +410,43 @@ class ToolManager {
 
         const ctx = layer.ctx;
         const size = this.options.brushSize;
+        const hardness = this.options.brushHardness;
 
+        ctx.save();
         ctx.globalCompositeOperation = 'destination-out';
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.lineWidth = size;
 
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
+        // Pour une gomme douce, utiliser des cercles avec dégradé
+        if (hardness < 100) {
+            const points = Utils.getLinePoints(Math.round(x1), Math.round(y1), Math.round(x2), Math.round(y2));
 
-        ctx.globalCompositeOperation = 'source-over';
+            for (const point of points) {
+                const gradient = ctx.createRadialGradient(
+                    point.x, point.y, 0,
+                    point.x, point.y, size / 2
+                );
+                gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+                gradient.addColorStop(hardness / 100, 'rgba(0, 0, 0, 1)');
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, size / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        } else {
+            // Gomme dure - trait simple
+            ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = size;
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+
+        ctx.restore();
     }
 
     /**

@@ -520,6 +520,7 @@ class FotoEditApp {
             // Raccourcis avec Ctrl
             if (e.ctrlKey || e.metaKey) {
                 switch (key) {
+                    // Fichier
                     case 'z':
                         e.preventDefault();
                         if (e.shiftKey) {
@@ -544,6 +545,7 @@ class FotoEditApp {
                         e.preventDefault();
                         this.openNewProjectModal();
                         break;
+                    // Zoom
                     case '=':
                     case '+':
                         e.preventDefault();
@@ -557,32 +559,76 @@ class FotoEditApp {
                         e.preventDefault();
                         this.zoomToFit();
                         break;
+                    // Outils (Ctrl + lettre)
+                    case 'v':
+                        e.preventDefault();
+                        this.selectTool('move');
+                        break;
+                    case 'm':
+                        e.preventDefault();
+                        this.selectTool('select');
+                        break;
+                    case 'b':
+                        e.preventDefault();
+                        this.selectTool('brush');
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        this.selectTool('eraser');
+                        break;
+                    case 'g':
+                        e.preventDefault();
+                        this.selectTool('bucket');
+                        break;
+                    case 't':
+                        e.preventDefault();
+                        this.selectTool('text');
+                        break;
+                    case 'l':
+                        e.preventDefault();
+                        this.selectTool('line');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        this.selectTool('rectangle');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        this.selectTool('eyedropper');
+                        break;
+                    case 'j':
+                        e.preventDefault();
+                        this.selectTool('clone');
+                        break;
+                    case 'k':
+                        e.preventDefault();
+                        this.selectTool('crop');
+                        break;
+                    case 'h':
+                        e.preventDefault();
+                        this.selectTool('hand');
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        this.selectTool('rectangle');
+                        break;
+                    case 'p':
+                        e.preventDefault();
+                        this.selectTool('ellipse');
+                        break;
+                    case 'd':
+                        e.preventDefault();
+                        this.selectTool('gradient');
+                        break;
                 }
                 return;
             }
 
-            // Raccourcis d'outils
+            // Raccourcis sans Ctrl
             switch (key) {
-                case 'v': this.selectTool('move'); break;
-                case 'm': this.selectTool('select'); break;
-                case 'b': this.selectTool('brush'); break;
-                case 'e': this.selectTool('eraser'); break;
-                case 'g': this.selectTool('bucket'); break;
-                case 't': this.selectTool('text'); break;
-                case 'l': this.selectTool('line'); break;
-                case 'u': this.selectTool('rectangle'); break;
-                case 'i': this.selectTool('eyedropper'); break;
-                case 's': this.selectTool('clone'); break;
-                case 'c': this.selectTool('crop'); break;
-                case 'h': this.selectTool('hand'); break;
-                case 'z': this.selectTool('zoom'); break;
                 case 'x':
                     // Permuter les couleurs
                     document.getElementById('swap-colors').click();
-                    break;
-                case 'd':
-                    // Réinitialiser les couleurs
-                    document.getElementById('reset-colors').click();
                     break;
                 case '[':
                     // Réduire la taille du pinceau
@@ -607,6 +653,7 @@ class FotoEditApp {
                 case 'backspace':
                     // Supprimer la sélection
                     if (this.selection) {
+                        e.preventDefault();
                         this.deleteSelection();
                     }
                     break;
