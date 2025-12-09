@@ -105,6 +105,9 @@ class FotoEditApp {
         document.getElementById('adj-white-balance').addEventListener('click', () => this.openWhiteBalanceModal());
         document.getElementById('adj-shadows-highlights').addEventListener('click', () => this.openShadowsHighlightsModal());
 
+        // Menu Aide
+        document.getElementById('show-help').addEventListener('click', () => this.openHelpModal());
+
         // Boutons d'accueil
         document.getElementById('welcome-new').addEventListener('click', () => this.openNewProjectModal());
         document.getElementById('welcome-open').addEventListener('click', () => this.openFile());
@@ -1231,6 +1234,10 @@ class FotoEditApp {
         document.getElementById('shadows-value').textContent = '0';
         document.getElementById('highlights-value').textContent = '0';
         document.getElementById('shadows-highlights-modal').classList.add('active');
+    }
+
+    openHelpModal() {
+        document.getElementById('help-modal').classList.add('active');
     }
 
     // ==========================================

@@ -71,6 +71,12 @@
                         <button id="adj-shadows-highlights"><i class="fas fa-circle-half-stroke"></i> Ombres/Hautes lumières</button>
                     </div>
                 </div>
+                <div class="menu-item" data-menu="help">
+                    <span>Aide</span>
+                    <div class="dropdown">
+                        <button id="show-help">Guide d'utilisation</button>
+                    </div>
+                </div>
             </nav>
             <div class="toolbar-right">
                 <span id="zoom-level">100%</span>
@@ -588,6 +594,108 @@
             <div class="modal-footer">
                 <button class="btn-cancel">Annuler</button>
                 <button class="btn-confirm" id="apply-text">Ajouter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Aide -->
+    <div class="modal" id="help-modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>Guide d'utilisation</h3>
+                <button class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body help-content">
+                <section class="help-section">
+                    <h4>Outils de dessin</h4>
+                    <dl class="help-list">
+                        <dt>Pinceau</dt>
+                        <dd>Outil de dessin à main levée. <kbd>Ctrl+B</kbd></dd>
+                        <dt>Gomme</dt>
+                        <dd>Efface les pixels du calque actif. <kbd>Ctrl+E</kbd></dd>
+                        <dt>Pot de peinture</dt>
+                        <dd>Remplit une zone de couleur uniforme. <kbd>Ctrl+G</kbd></dd>
+                        <dt>Dégradé</dt>
+                        <dd>Applique un dégradé linéaire ou radial. <kbd>Ctrl+D</kbd></dd>
+                        <dt>Texte</dt>
+                        <dd>Insère du texte sur l'image. <kbd>Ctrl+T</kbd></dd>
+                    </dl>
+                </section>
+
+                <section class="help-section">
+                    <h4>Formes</h4>
+                    <dl class="help-list">
+                        <dt>Ligne</dt>
+                        <dd>Trace une ligne droite. <kbd>Ctrl+L</kbd></dd>
+                        <dt>Rectangle</dt>
+                        <dd>Dessine un rectangle. <kbd>Ctrl+R</kbd></dd>
+                        <dt>Ellipse</dt>
+                        <dd>Dessine une ellipse ou un cercle. <kbd>Ctrl+P</kbd></dd>
+                    </dl>
+                </section>
+
+                <section class="help-section">
+                    <h4>Sélection et transformation</h4>
+                    <dl class="help-list">
+                        <dt>Déplacer</dt>
+                        <dd>Déplace le contenu du calque. <kbd>Ctrl+V</kbd></dd>
+                        <dt>Sélection</dt>
+                        <dd>Sélectionne une zone rectangulaire. <kbd>Ctrl+M</kbd></dd>
+                        <dt>Recadrage</dt>
+                        <dd>Recadre l'image selon une zone définie. <kbd>Ctrl+K</kbd></dd>
+                    </dl>
+                </section>
+
+                <section class="help-section">
+                    <h4>Outils de précision</h4>
+                    <dl class="help-list">
+                        <dt>Pipette</dt>
+                        <dd>Prélève une couleur de l'image. <kbd>Ctrl+I</kbd></dd>
+                        <dt>Tampon de clonage</dt>
+                        <dd>Duplique une zone de l'image. Alt+clic pour définir la source. <kbd>Ctrl+J</kbd></dd>
+                    </dl>
+                </section>
+
+                <section class="help-section">
+                    <h4>Navigation</h4>
+                    <dl class="help-list">
+                        <dt>Main</dt>
+                        <dd>Déplace la vue dans la zone de travail. <kbd>Ctrl+H</kbd></dd>
+                        <dt>Zoom</dt>
+                        <dd>Modifie le niveau de zoom. <kbd>Ctrl++</kbd></dd>
+                    </dl>
+                </section>
+
+                <section class="help-section">
+                    <h4>Raccourcis généraux</h4>
+                    <dl class="help-list">
+                        <dt>Annuler</dt>
+                        <dd>Annule la dernière action. <kbd>Ctrl+Z</kbd></dd>
+                        <dt>Rétablir</dt>
+                        <dd>Rétablit l'action annulée. <kbd>Ctrl+Y</kbd></dd>
+                        <dt>Copier</dt>
+                        <dd>Copie la sélection. <kbd>Ctrl+C</kbd></dd>
+                        <dt>Coller</dt>
+                        <dd>Colle le contenu copié. <kbd>Ctrl+V</kbd></dd>
+                        <dt>Permuter les couleurs</dt>
+                        <dd>Inverse les couleurs de premier plan et d'arrière-plan. <kbd>X</kbd></dd>
+                        <dt>Réinitialiser les couleurs</dt>
+                        <dd>Remet noir et blanc par défaut. <kbd>D</kbd></dd>
+                    </dl>
+                </section>
+
+                <section class="help-section">
+                    <h4>Calques</h4>
+                    <p class="help-text">Les calques permettent de superposer plusieurs éléments. Le panneau de droite affiche la liste des calques, leur opacité et leur mode de fusion.</p>
+                </section>
+
+                <section class="help-section">
+                    <h4>Filtres et réglages</h4>
+                    <p class="help-text">Accessibles via les menus Filtres et Réglages. L'aperçu en temps réel permet de visualiser les modifications avant validation.</p>
+                </section>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-confirm modal-close">Fermer</button>
             </div>
         </div>
     </div>

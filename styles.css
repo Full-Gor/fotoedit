@@ -1085,6 +1085,83 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ============================================
+   Modale d'aide
+   ============================================ */
+
+.modal-large {
+    max-width: 600px;
+    max-height: 80vh;
+}
+
+.modal-large .modal-body {
+    max-height: calc(80vh - 120px);
+    overflow-y: auto;
+}
+
+.help-content {
+    padding: 16px 20px;
+}
+
+.help-section {
+    margin-bottom: 20px;
+}
+
+.help-section:last-child {
+    margin-bottom: 0;
+}
+
+.help-section h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.help-list {
+    margin: 0;
+    padding: 0;
+}
+
+.help-list dt {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 13px;
+    margin-bottom: 2px;
+}
+
+.help-list dd {
+    margin: 0 0 12px 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.help-list dd:last-child {
+    margin-bottom: 0;
+}
+
+.help-list kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    margin-left: 8px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.help-text {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+/* ============================================
    Responsive
    ============================================ */
 
