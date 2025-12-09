@@ -1,0 +1,1112 @@
+/* ============================================
+   FotoEdit - Éditeur d'Images Professionnel
+   Styles CSS
+   ============================================ */
+
+:root {
+    /* Couleurs du thème sombre */
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #252526;
+    --bg-tertiary: #2d2d30;
+    --bg-hover: #3e3e42;
+    --bg-active: #094771;
+    --text-primary: #cccccc;
+    --text-secondary: #9d9d9d;
+    --text-muted: #6d6d6d;
+    --border-color: #3c3c3c;
+    --accent-color: #0078d4;
+    --accent-hover: #1e8ad4;
+    --danger-color: #f14c4c;
+    --success-color: #4ec9b0;
+    --warning-color: #cca700;
+
+    /* Dimensions */
+    --toolbar-width: 50px;
+    --panel-width: 280px;
+    --menu-height: 40px;
+    --status-height: 25px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+    user-select: none;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* ============================================
+   Barre de menu supérieure
+   ============================================ */
+
+.menu-bar {
+    display: flex;
+    align-items: center;
+    height: var(--menu-height);
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 10px;
+    z-index: 100;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 20px;
+    color: var(--accent-color);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.logo i {
+    font-size: 18px;
+}
+
+.menu {
+    display: flex;
+    flex: 1;
+}
+
+.menu-item {
+    position: relative;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.15s;
+}
+
+.menu-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.menu-item span {
+    font-size: 13px;
+}
+
+.dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 220px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    padding: 4px 0;
+    z-index: 1000;
+}
+
+.menu-item:hover .dropdown {
+    display: block;
+}
+
+.dropdown button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 16px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    font-size: 13px;
+}
+
+.dropdown button:hover {
+    background-color: var(--bg-active);
+}
+
+.dropdown button i {
+    width: 16px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.dropdown button kbd {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--bg-primary);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.dropdown .separator {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 4px 8px;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toolbar-right span {
+    font-size: 12px;
+    color: var(--text-secondary);
+    min-width: 50px;
+    text-align: center;
+}
+
+.toolbar-right button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.toolbar-right button:hover {
+    background-color: var(--bg-hover);
+}
+
+/* ============================================
+   Conteneur principal
+   ============================================ */
+
+.main-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ============================================
+   Barre d'outils gauche
+   ============================================ */
+
+.toolbar-left {
+    width: var(--toolbar-width);
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tool-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 4px;
+}
+
+.tool-group:last-of-type {
+    border-bottom: none;
+}
+
+.tool-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s;
+}
+
+.tool-btn:hover {
+    background-color: var(--bg-hover);
+}
+
+.tool-btn.active {
+    background-color: var(--bg-active);
+    color: white;
+}
+
+.tool-btn i {
+    font-size: 16px;
+}
+
+.color-picker-container {
+    margin-top: auto;
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.color-swatches {
+    position: relative;
+    width: 36px;
+    height: 36px;
+}
+
+.color-swatches input[type="color"] {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--bg-primary);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.color-swatches input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-swatches input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 2px;
+}
+
+#foreground-color {
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+#background-color {
+    bottom: 0;
+    right: 0;
+    z-index: 1;
+}
+
+.color-picker-container button {
+    width: 32px;
+    height: 24px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.color-picker-container button:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* ============================================
+   Zone de travail
+   ============================================ */
+
+.workspace {
+    flex: 1;
+    position: relative;
+    background-color: var(--bg-primary);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.canvas-container {
+    position: relative;
+    background-image:
+        linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
+        linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
+        linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    background-color: #1a1a1a;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    display: none;
+}
+
+#main-canvas {
+    display: block;
+    cursor: crosshair;
+}
+
+.selection-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.crop-overlay {
+    position: absolute;
+    border: 2px dashed var(--accent-color);
+    background-color: rgba(0, 120, 212, 0.1);
+    cursor: move;
+}
+
+.crop-handles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.crop-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: var(--accent-color);
+    border: 1px solid white;
+}
+
+.crop-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
+.crop-handle.n { top: -5px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+.crop-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
+.crop-handle.e { top: 50%; right: -5px; transform: translateY(-50%); cursor: e-resize; }
+.crop-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
+.crop-handle.s { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+.crop-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
+.crop-handle.w { top: 50%; left: -5px; transform: translateY(-50%); cursor: w-resize; }
+
+/* Écran de bienvenue */
+.welcome-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-primary);
+}
+
+.welcome-screen.hidden {
+    display: none;
+}
+
+.welcome-content {
+    text-align: center;
+    padding: 40px;
+}
+
+.welcome-content i {
+    font-size: 80px;
+    color: var(--accent-color);
+    margin-bottom: 20px;
+}
+
+.welcome-content h2 {
+    font-size: 28px;
+    font-weight: 400;
+    margin-bottom: 10px;
+}
+
+.welcome-content p {
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+}
+
+.welcome-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+.welcome-actions button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background-color: var(--accent-color);
+    border: none;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.15s;
+}
+
+.welcome-actions button:hover {
+    background-color: var(--accent-hover);
+}
+
+.welcome-actions button:last-child {
+    background-color: var(--bg-tertiary);
+}
+
+.welcome-actions button:last-child:hover {
+    background-color: var(--bg-hover);
+}
+
+/* ============================================
+   Panneau de droite
+   ============================================ */
+
+.panel-right {
+    width: var(--panel-width);
+    background-color: var(--bg-secondary);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.panel {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background-color: var(--bg-tertiary);
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.panel-header:hover {
+    background-color: var(--bg-hover);
+}
+
+.panel-toggle {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.2s;
+}
+
+.panel.collapsed .panel-toggle {
+    transform: rotate(-90deg);
+}
+
+.panel.collapsed .panel-content {
+    display: none;
+}
+
+.panel-content {
+    padding: 12px;
+}
+
+.option-group {
+    margin-bottom: 12px;
+}
+
+.option-group:last-child {
+    margin-bottom: 0;
+}
+
+.option-group label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.option-group input[type="range"] {
+    width: calc(100% - 45px);
+    vertical-align: middle;
+}
+
+.option-group input[type="range"] + span {
+    display: inline-block;
+    width: 40px;
+    text-align: right;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.option-group select {
+    width: 100%;
+    padding: 6px 8px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
+.option-group input[type="number"] {
+    width: 100%;
+    padding: 6px 8px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
+.text-style-buttons {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.text-style-buttons button {
+    flex: 1;
+    padding: 6px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.text-style-buttons button:hover {
+    background-color: var(--bg-hover);
+}
+
+.text-style-buttons button.active {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+/* Panneau des calques */
+.layers-list {
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.layer-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.layer-item:last-child {
+    border-bottom: none;
+}
+
+.layer-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.layer-item.active {
+    background-color: var(--bg-active);
+}
+
+.layer-visibility {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+}
+
+.layer-visibility:hover {
+    color: var(--text-primary);
+}
+
+.layer-visibility.hidden {
+    color: var(--text-muted);
+}
+
+.layer-thumbnail {
+    width: 32px;
+    height: 32px;
+    background-image:
+        linear-gradient(45deg, #3a3a3a 25%, transparent 25%),
+        linear-gradient(-45deg, #3a3a3a 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #3a3a3a 75%),
+        linear-gradient(-45deg, transparent 75%, #3a3a3a 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+    background-color: #2a2a2a;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.layer-thumbnail canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.layer-name {
+    flex: 1;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.layer-name input {
+    width: 100%;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--accent-color);
+    border-radius: 2px;
+    color: var(--text-primary);
+    padding: 2px 4px;
+    font-size: 12px;
+}
+
+.layers-controls {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.layers-controls button {
+    flex: 1;
+    padding: 6px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.layers-controls button:hover {
+    background-color: var(--bg-hover);
+}
+
+.layers-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Panneau historique */
+.history-list {
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.history-item:last-child {
+    border-bottom: none;
+}
+
+.history-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.history-item.active {
+    background-color: var(--bg-active);
+}
+
+.history-item.future {
+    opacity: 0.5;
+}
+
+.history-item i {
+    width: 16px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   Barre d'état
+   ============================================ */
+
+.status-bar {
+    height: var(--status-height);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 12px;
+    background-color: var(--bg-tertiary);
+    border-top: 1px solid var(--border-color);
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.status-bar span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ============================================
+   Modales
+   ============================================ */
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    min-width: 400px;
+    max-width: 90vw;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.form-group input[type="number"],
+.form-group input[type="text"],
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.form-group input[type="range"] {
+    width: calc(100% - 50px);
+    vertical-align: middle;
+}
+
+.form-group input[type="range"] + span {
+    display: inline-block;
+    width: 45px;
+    text-align: right;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.form-group input[type="color"] {
+    width: 50px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.bg-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.bg-options label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.presets {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.presets label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.presets button {
+    padding: 6px 12px;
+    margin-right: 6px;
+    margin-bottom: 6px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.presets button:hover {
+    background-color: var(--bg-hover);
+}
+
+.preview-toggle {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+.preview-toggle label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.btn-cancel {
+    padding: 8px 20px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.btn-cancel:hover {
+    background-color: var(--bg-hover);
+}
+
+.btn-confirm {
+    padding: 8px 20px;
+    background-color: var(--accent-color);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.btn-confirm:hover {
+    background-color: var(--accent-hover);
+}
+
+/* ============================================
+   Sliders personnalisés
+   ============================================ */
+
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: var(--bg-tertiary);
+    border-radius: 2px;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--accent-color);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* ============================================
+   Scrollbars personnalisées
+   ============================================ */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-hover);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal.active .modal-content {
+    animation: slideIn 0.2s ease-out;
+}
+
+/* ============================================
+   Curseurs personnalisés
+   ============================================ */
+
+.cursor-move { cursor: move; }
+.cursor-crosshair { cursor: crosshair; }
+.cursor-text { cursor: text; }
+.cursor-pointer { cursor: pointer; }
+.cursor-grab { cursor: grab; }
+.cursor-grabbing { cursor: grabbing; }
+.cursor-zoom-in { cursor: zoom-in; }
+.cursor-zoom-out { cursor: zoom-out; }
+.cursor-eyedropper { cursor: crosshair; }
+
+/* ============================================
+   Drag and Drop
+   ============================================ */
+
+.workspace.drag-over::after {
+    content: 'Déposez votre image ici';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 120, 212, 0.2);
+    border: 3px dashed var(--accent-color);
+    font-size: 24px;
+    color: var(--accent-color);
+    z-index: 100;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 1200px) {
+    :root {
+        --panel-width: 250px;
+    }
+}
+
+@media (max-width: 900px) {
+    .panel-right {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .toolbar-left {
+        width: 40px;
+    }
+
+    .tool-btn {
+        width: 32px;
+        height: 32px;
+    }
+}

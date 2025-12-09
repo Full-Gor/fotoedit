@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FotoEdit - Éditeur d'Images Professionnel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Barre de menu supérieure -->
+        <header class="menu-bar">
+            <div class="logo">
+                <i class="fas fa-image"></i>
+                <span>FotoEdit</span>
+            </div>
+            <nav class="menu">
+                <div class="menu-item" data-menu="file">
+                    <span>Fichier</span>
+                    <div class="dropdown">
+                        <button id="new-project"><i class="fas fa-file"></i> Nouveau</button>
+                        <button id="open-image"><i class="fas fa-folder-open"></i> Ouvrir</button>
+                        <div class="separator"></div>
+                        <button id="export-png"><i class="fas fa-download"></i> Exporter PNG</button>
+                        <button id="export-jpeg"><i class="fas fa-download"></i> Exporter JPEG</button>
+                        <button id="export-webp"><i class="fas fa-download"></i> Exporter WebP</button>
+                    </div>
+                </div>
+                <div class="menu-item" data-menu="edit">
+                    <span>Édition</span>
+                    <div class="dropdown">
+                        <button id="undo-btn"><i class="fas fa-undo"></i> Annuler <kbd>Ctrl+Z</kbd></button>
+                        <button id="redo-btn"><i class="fas fa-redo"></i> Rétablir <kbd>Ctrl+Y</kbd></button>
+                        <div class="separator"></div>
+                        <button id="copy-btn"><i class="fas fa-copy"></i> Copier <kbd>Ctrl+C</kbd></button>
+                        <button id="paste-btn"><i class="fas fa-paste"></i> Coller <kbd>Ctrl+V</kbd></button>
+                        <button id="cut-btn"><i class="fas fa-cut"></i> Couper <kbd>Ctrl+X</kbd></button>
+                    </div>
+                </div>
+                <div class="menu-item" data-menu="image">
+                    <span>Image</span>
+                    <div class="dropdown">
+                        <button id="resize-image"><i class="fas fa-expand-arrows-alt"></i> Redimensionner</button>
+                        <button id="crop-image"><i class="fas fa-crop-alt"></i> Recadrer</button>
+                        <div class="separator"></div>
+                        <button id="rotate-left"><i class="fas fa-undo"></i> Rotation 90° gauche</button>
+                        <button id="rotate-right"><i class="fas fa-redo"></i> Rotation 90° droite</button>
+                        <button id="flip-h"><i class="fas fa-arrows-alt-h"></i> Retourner horizontalement</button>
+                        <button id="flip-v"><i class="fas fa-arrows-alt-v"></i> Retourner verticalement</button>
+                    </div>
+                </div>
+                <div class="menu-item" data-menu="filter">
+                    <span>Filtres</span>
+                    <div class="dropdown">
+                        <button id="filter-grayscale"><i class="fas fa-adjust"></i> Niveaux de gris</button>
+                        <button id="filter-sepia"><i class="fas fa-sun"></i> Sépia</button>
+                        <button id="filter-invert"><i class="fas fa-exchange-alt"></i> Inverser</button>
+                        <div class="separator"></div>
+                        <button id="filter-blur"><i class="fas fa-water"></i> Flou</button>
+                        <button id="filter-sharpen"><i class="fas fa-bolt"></i> Netteté</button>
+                        <button id="filter-vignette"><i class="fas fa-circle"></i> Vignette</button>
+                    </div>
+                </div>
+                <div class="menu-item" data-menu="adjustments">
+                    <span>Réglages</span>
+                    <div class="dropdown">
+                        <button id="adj-brightness"><i class="fas fa-sun"></i> Luminosité/Contraste</button>
+                        <button id="adj-hue-saturation"><i class="fas fa-palette"></i> Teinte/Saturation</button>
+                        <button id="adj-white-balance"><i class="fas fa-thermometer-half"></i> Balance des blancs</button>
+                        <button id="adj-shadows-highlights"><i class="fas fa-circle-half-stroke"></i> Ombres/Hautes lumières</button>
+                    </div>
+                </div>
+            </nav>
+            <div class="toolbar-right">
+                <span id="zoom-level">100%</span>
+                <button id="zoom-in" title="Zoom +"><i class="fas fa-search-plus"></i></button>
+                <button id="zoom-out" title="Zoom -"><i class="fas fa-search-minus"></i></button>
+                <button id="zoom-fit" title="Ajuster"><i class="fas fa-compress-arrows-alt"></i></button>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <!-- Barre d'outils gauche -->
+            <aside class="toolbar-left">
+                <div class="tool-group">
+                    <button class="tool-btn active" data-tool="move" title="Déplacer (V)">
+                        <i class="fas fa-arrows-alt"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="select" title="Sélection rectangulaire (M)">
+                        <i class="far fa-square"></i>
+                    </button>
+                </div>
+                <div class="tool-group">
+                    <button class="tool-btn" data-tool="brush" title="Pinceau (B)">
+                        <i class="fas fa-paint-brush"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="eraser" title="Gomme (E)">
+                        <i class="fas fa-eraser"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="bucket" title="Pot de peinture (G)">
+                        <i class="fas fa-fill-drip"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="gradient" title="Dégradé (G)">
+                        <i class="fas fa-gradient"></i>
+                    </button>
+                </div>
+                <div class="tool-group">
+                    <button class="tool-btn" data-tool="text" title="Texte (T)">
+                        <i class="fas fa-font"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="line" title="Ligne (L)">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="rectangle" title="Rectangle (U)">
+                        <i class="far fa-square"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="ellipse" title="Ellipse (U)">
+                        <i class="far fa-circle"></i>
+                    </button>
+                </div>
+                <div class="tool-group">
+                    <button class="tool-btn" data-tool="eyedropper" title="Pipette (I)">
+                        <i class="fas fa-eye-dropper"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="clone" title="Tampon de clonage (S)">
+                        <i class="fas fa-stamp"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="crop" title="Recadrage (C)">
+                        <i class="fas fa-crop-alt"></i>
+                    </button>
+                </div>
+                <div class="tool-group">
+                    <button class="tool-btn" data-tool="hand" title="Main (H)">
+                        <i class="fas fa-hand-paper"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="zoom" title="Zoom (Z)">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="color-picker-container">
+                    <div class="color-swatches">
+                        <input type="color" id="foreground-color" value="#000000" title="Couleur de premier plan">
+                        <input type="color" id="background-color" value="#ffffff" title="Couleur d'arrière-plan">
+                    </div>
+                    <button id="swap-colors" title="Permuter les couleurs (X)">
+                        <i class="fas fa-exchange-alt"></i>
+                    </button>
+                    <button id="reset-colors" title="Réinitialiser (D)">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Zone de travail centrale -->
+            <main class="workspace">
+                <div class="canvas-container" id="canvas-container">
+                    <canvas id="main-canvas"></canvas>
+                    <div class="selection-overlay" id="selection-overlay"></div>
+                    <div class="crop-overlay" id="crop-overlay" style="display: none;">
+                        <div class="crop-handles">
+                            <div class="crop-handle nw" data-handle="nw"></div>
+                            <div class="crop-handle n" data-handle="n"></div>
+                            <div class="crop-handle ne" data-handle="ne"></div>
+                            <div class="crop-handle e" data-handle="e"></div>
+                            <div class="crop-handle se" data-handle="se"></div>
+                            <div class="crop-handle s" data-handle="s"></div>
+                            <div class="crop-handle sw" data-handle="sw"></div>
+                            <div class="crop-handle w" data-handle="w"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Message de bienvenue -->
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-content">
+                        <i class="fas fa-image"></i>
+                        <h2>Bienvenue dans FotoEdit</h2>
+                        <p>Glissez une image ici ou utilisez les options ci-dessous</p>
+                        <div class="welcome-actions">
+                            <button id="welcome-new"><i class="fas fa-file"></i> Nouveau projet</button>
+                            <button id="welcome-open"><i class="fas fa-folder-open"></i> Ouvrir une image</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Panneau de droite -->
+            <aside class="panel-right">
+                <!-- Options de l'outil actif -->
+                <div class="panel tool-options-panel">
+                    <div class="panel-header">
+                        <span>Options de l'outil</span>
+                        <button class="panel-toggle"><i class="fas fa-chevron-down"></i></button>
+                    </div>
+                    <div class="panel-content" id="tool-options">
+                        <!-- Contenu dynamique selon l'outil sélectionné -->
+                        <div class="option-group" id="brush-options">
+                            <label>Taille</label>
+                            <input type="range" id="brush-size" min="1" max="200" value="10">
+                            <span id="brush-size-value">10px</span>
+                        </div>
+                        <div class="option-group" id="brush-hardness-option">
+                            <label>Dureté</label>
+                            <input type="range" id="brush-hardness" min="0" max="100" value="100">
+                            <span id="brush-hardness-value">100%</span>
+                        </div>
+                        <div class="option-group" id="brush-opacity-option">
+                            <label>Opacité</label>
+                            <input type="range" id="brush-opacity" min="1" max="100" value="100">
+                            <span id="brush-opacity-value">100%</span>
+                        </div>
+                        <div class="option-group" id="shape-fill-option" style="display: none;">
+                            <label>
+                                <input type="checkbox" id="shape-fill"> Remplir la forme
+                            </label>
+                        </div>
+                        <div class="option-group" id="shape-stroke-option" style="display: none;">
+                            <label>Épaisseur du trait</label>
+                            <input type="range" id="shape-stroke-width" min="1" max="50" value="2">
+                            <span id="shape-stroke-value">2px</span>
+                        </div>
+                        <div class="option-group" id="text-options" style="display: none;">
+                            <label>Police</label>
+                            <select id="text-font">
+                                <option value="Arial">Arial</option>
+                                <option value="Helvetica">Helvetica</option>
+                                <option value="Times New Roman">Times New Roman</option>
+                                <option value="Georgia">Georgia</option>
+                                <option value="Verdana">Verdana</option>
+                                <option value="Courier New">Courier New</option>
+                                <option value="Impact">Impact</option>
+                            </select>
+                            <label>Taille</label>
+                            <input type="number" id="text-size" min="8" max="200" value="32">
+                            <div class="text-style-buttons">
+                                <button id="text-bold" title="Gras"><i class="fas fa-bold"></i></button>
+                                <button id="text-italic" title="Italique"><i class="fas fa-italic"></i></button>
+                            </div>
+                        </div>
+                        <div class="option-group" id="gradient-options" style="display: none;">
+                            <label>Type</label>
+                            <select id="gradient-type">
+                                <option value="linear">Linéaire</option>
+                                <option value="radial">Radial</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panneau des calques -->
+                <div class="panel layers-panel">
+                    <div class="panel-header">
+                        <span>Calques</span>
+                        <button class="panel-toggle"><i class="fas fa-chevron-down"></i></button>
+                    </div>
+                    <div class="panel-content">
+                        <div class="layers-list" id="layers-list">
+                            <!-- Les calques seront ajoutés dynamiquement -->
+                        </div>
+                        <div class="layers-controls">
+                            <button id="add-layer" title="Ajouter un calque"><i class="fas fa-plus"></i></button>
+                            <button id="delete-layer" title="Supprimer le calque"><i class="fas fa-trash"></i></button>
+                            <button id="duplicate-layer" title="Dupliquer le calque"><i class="fas fa-copy"></i></button>
+                            <button id="merge-layers" title="Fusionner vers le bas"><i class="fas fa-compress-alt"></i></button>
+                            <button id="move-layer-up" title="Monter"><i class="fas fa-chevron-up"></i></button>
+                            <button id="move-layer-down" title="Descendre"><i class="fas fa-chevron-down"></i></button>
+                        </div>
+                        <div class="layer-properties">
+                            <div class="option-group">
+                                <label>Opacité</label>
+                                <input type="range" id="layer-opacity" min="0" max="100" value="100">
+                                <span id="layer-opacity-value">100%</span>
+                            </div>
+                            <div class="option-group">
+                                <label>Mode de fusion</label>
+                                <select id="blend-mode">
+                                    <option value="normal">Normal</option>
+                                    <option value="multiply">Multiplier</option>
+                                    <option value="screen">Écran</option>
+                                    <option value="overlay">Incrustation</option>
+                                    <option value="darken">Obscurcir</option>
+                                    <option value="lighten">Éclaircir</option>
+                                    <option value="color-dodge">Densité couleur -</option>
+                                    <option value="color-burn">Densité couleur +</option>
+                                    <option value="hard-light">Lumière crue</option>
+                                    <option value="soft-light">Lumière tamisée</option>
+                                    <option value="difference">Différence</option>
+                                    <option value="exclusion">Exclusion</option>
+                                    <option value="hue">Teinte</option>
+                                    <option value="saturation">Saturation</option>
+                                    <option value="color">Couleur</option>
+                                    <option value="luminosity">Luminosité</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historique -->
+                <div class="panel history-panel">
+                    <div class="panel-header">
+                        <span>Historique</span>
+                        <button class="panel-toggle"><i class="fas fa-chevron-down"></i></button>
+                    </div>
+                    <div class="panel-content">
+                        <div class="history-list" id="history-list">
+                            <!-- L'historique sera ajouté dynamiquement -->
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Barre d'état -->
+        <footer class="status-bar">
+            <span id="canvas-size">800 × 600 px</span>
+            <span id="cursor-position">X: 0, Y: 0</span>
+            <span id="selected-color">Couleur: #000000</span>
+            <span id="current-tool">Outil: Déplacer</span>
+        </footer>
+    </div>
+
+    <!-- Modales -->
+    <!-- Modale Nouveau Projet -->
+    <div class="modal" id="new-project-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nouveau projet</h3>
+                <button class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Largeur (px)</label>
+                    <input type="number" id="new-width" value="1920" min="1" max="10000">
+                </div>
+                <div class="form-group">
+                    <label>Hauteur (px)</label>
+                    <input type="number" id="new-height" value="1080" min="1" max="10000">
+                </div>
+                <div class="form-group">
+                    <label>Couleur de fond</label>
+                    <div class="bg-options">
+                        <label><input type="radio" name="bg-type" value="white" checked> Blanc</label>
+                        <label><input type="radio" name="bg-type" value="transparent"> Transparent</label>
+                        <label><input type="radio" name="bg-type" value="color"> Couleur personnalisée</label>
+                    </div>
+                    <input type="color" id="new-bg-color" value="#ffffff">
+                </div>
+                <div class="presets">
+                    <label>Préréglages :</label>
+                    <button data-width="1920" data-height="1080">Full HD</button>
+                    <button data-width="1280" data-height="720">HD</button>
+                    <button data-width="1080" data-height="1080">Instagram</button>
+                    <button data-width="1200" data-height="630">Facebook</button>
+                    <button data-width="800" data-height="600">Standard</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">Annuler</button>
+                <button class="btn-confirm" id="create-project">Créer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Redimensionner -->
+    <div class="modal" id="resize-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Redimensionner l'image</h3>
+                <button class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Largeur (px)</label>
+                    <input type="number" id="resize-width" min="1" max="10000">
+                </div>
+                <div class="form-group">
+                    <label>Hauteur (px)</label>
+                    <input type="number" id="resize-height" min="1" max="10000">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="maintain-aspect" checked> Conserver les proportions
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Méthode de redimensionnement</label>
+                    <select id="resize-method">
+                        <option value="smooth">Lisse (bilinéaire)</option>
+                        <option value="pixelated">Net (plus proche voisin)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">Annuler</button>
+                <button class="btn-confirm" id="apply-resize">Appliquer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Luminosité/Contraste -->
+    <div class="modal" id="brightness-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Luminosité / Contraste</h3>
+                <button class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Luminosité</label>
+                    <input type="range" id="adj-brightness-slider" min="-100" max="100" value="0">
+                    <span id="brightness-value">0</span>
+                </div>
+                <div class="form-group">
+                    <label>Contraste</label>
+                    <input type="range" id="adj-contrast-slider" min="-100" max="100" value="0">
+                    <span id="contrast-value">0</span>
+                </div>
+                <div class="preview-toggle">
+                    <label><input type="checkbox" id="preview-brightness" checked> Aperçu</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">Annuler</button>
+                <button class="btn-confirm" id="apply-brightness">Appliquer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Teinte/Saturation -->
+    <div class="modal" id="hue-saturation-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Teinte / Saturation</h3>
+                <button class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Teinte</label>
+                    <input type="range" id="adj-hue-slider" min="-180" max="180" value="0">
+                    <span id="hue-value">0°</span>
+                </div>
+                <div class="form-group">
+                    <label>Saturation</label>
+                    <input type="range" id="adj-saturation-slider" min="-100" max="100" value="0">
+                    <span id="saturation-value">0</span>
+                </div>
+                <div class="form-group">
+                    <label>Luminance</label>
+                    <input type="range" id="adj-lightness-slider" min="-100" max="100" value="0">
+                    <span id="lightness-value">0</span>
+                </div>
+                <div class="preview-toggle">
+                    <label><input type="checkbox" id="preview-hue" checked> Aperçu</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">Annuler</button>
+                <button class="btn-confirm" id="apply-hue-saturation">Appliquer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Balance des blancs -->
+    <div class="modal" id="white-balance-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Balance des blancs</h3>
+                <button class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Température</label>
+                    <input type="range" id="adj-temperature-slider" min="-100" max="100" value="0">
+                    <span id="temperature-value">0</span>
+                </div>
+                <div class="form-group">
+                    <label>Teinte</label>
+                    <input type="range" id="adj-tint-slider" min="-100" max="100" value="0">
+                    <span id="tint-value">0</span>
+                </div>
+                <div class="preview-toggle">
+                    <label><input type="checkbox" id="preview-wb" checked> Aperçu</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">Annuler</button>
+                <button class="btn-confirm" id="apply-white-balance">Appliquer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Ombres/Hautes lumières -->
+    <div class="modal" id="shadows-highlights-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Ombres / Hautes lumières</h3>
+                <button class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Ombres</label>
+                    <input type="range" id="adj-shadows-slider" min="-100" max="100" value="0">
+                    <span id="shadows-value">0</span>
+                </div>
+                <div class="form-group">
+                    <label>Hautes lumières</label>
+                    <input type="range" id="adj-highlights-slider" min="-100" max="100" value="0">
+                    <span id="highlights-value">0</span>
+                </div>
+                <div class="preview-toggle">
+                    <label><input type="checkbox" id="preview-sh" checked> Aperçu</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">Annuler</button>
+                <button class="btn-confirm" id="apply-shadows-highlights">Appliquer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Flou -->
+    <div class="modal" id="blur-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Flou</h3>
+                <button class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Rayon</label>
+                    <input type="range" id="blur-radius" min="1" max="50" value="5">
+                    <span id="blur-radius-value">5px</span>
+                </div>
+                <div class="preview-toggle">
+                    <label><input type="checkbox" id="preview-blur" checked> Aperçu</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">Annuler</button>
+                <button class="btn-confirm" id="apply-blur">Appliquer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Vignette -->
+    <div class="modal" id="vignette-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Vignette</h3>
+                <button class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Intensité</label>
+                    <input type="range" id="vignette-intensity" min="0" max="100" value="50">
+                    <span id="vignette-intensity-value">50%</span>
+                </div>
+                <div class="form-group">
+                    <label>Rayon</label>
+                    <input type="range" id="vignette-radius" min="10" max="100" value="70">
+                    <span id="vignette-radius-value">70%</span>
+                </div>
+                <div class="preview-toggle">
+                    <label><input type="checkbox" id="preview-vignette" checked> Aperçu</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">Annuler</button>
+                <button class="btn-confirm" id="apply-vignette">Appliquer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale Texte -->
+    <div class="modal" id="text-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Ajouter du texte</h3>
+                <button class="modal-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Texte</label>
+                    <textarea id="text-input" rows="3" placeholder="Entrez votre texte ici..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel">Annuler</button>
+                <button class="btn-confirm" id="apply-text">Ajouter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input fichier caché -->
+    <input type="file" id="file-input" accept="image/*" style="display: none;">
+
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/history.js"></script>
+    <script src="js/layers.js"></script>
+    <script src="js/tools.js"></script>
+    <script src="js/filters.js"></script>
+    <script src="js/adjustments.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
