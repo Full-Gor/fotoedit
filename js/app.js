@@ -48,11 +48,17 @@ class FotoEditApp {
      * Configurer les écouteurs d'événements du canvas
      */
     setupEventListeners() {
-        // Événements du canvas
+        // Événements souris du canvas
         this.mainCanvas.addEventListener('mousedown', (e) => this.toolManager.onMouseDown(e));
         this.mainCanvas.addEventListener('mousemove', (e) => this.toolManager.onMouseMove(e));
         this.mainCanvas.addEventListener('mouseup', (e) => this.toolManager.onMouseUp(e));
         this.mainCanvas.addEventListener('mouseleave', (e) => this.toolManager.onMouseUp(e));
+
+        // Événements tactiles du canvas
+        this.mainCanvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.mainCanvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.mainCanvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+        this.mainCanvas.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
 
         // Événements de zoom avec la molette
         this.canvasContainer.addEventListener('wheel', (e) => {
@@ -66,6 +72,96 @@ class FotoEditApp {
 
         // Historique
         this.historyManager.addListener(() => this.updateHistoryPanel());
+
+        // Mobile - Menu toggle
+        const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+        const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+        const menu = document.querySelector('.menu');
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', () => {
+                menu.classList.toggle('visible');
+                mobileMenuOverlay.classList.toggle('visible');
+            });
+        }
+
+        if (mobileMenuOverlay) {
+            mobileMenuOverlay.addEventListener('click', () => {
+                menu.classList.remove('visible');
+                mobileMenuOverlay.classList.remove('visible');
+            });
+        }
+
+        // Mobile - Menu items expand/collapse
+        document.querySelectorAll('.menu .menu-item > span').forEach(span => {
+            span.addEventListener('click', (e) => {
+                if (window.innerWidth <= 600) {
+                    e.stopPropagation();
+                    const menuItem = span.closest('.menu-item');
+                    menuItem.classList.toggle('expanded');
+                }
+            });
+        });
+
+        // Mobile - Panel toggle
+        const mobilePanelToggle = document.getElementById('mobile-panel-toggle');
+        const panelRight = document.querySelector('.panel-right');
+
+        if (mobilePanelToggle && panelRight) {
+            mobilePanelToggle.addEventListener('click', () => {
+                panelRight.classList.toggle('visible');
+            });
+        }
+
+        // Fermer les menus quand on clique sur un bouton du dropdown (mobile)
+        document.querySelectorAll('.menu .dropdown button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (window.innerWidth <= 600) {
+                    menu.classList.remove('visible');
+                    mobileMenuOverlay.classList.remove('visible');
+                    document.querySelectorAll('.menu .menu-item').forEach(item => {
+                        item.classList.remove('expanded');
+                    });
+                }
+            });
+        });
+    }
+
+    /**
+     * Gestion des événements tactiles
+     */
+    handleTouchStart(e) {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                button: 0
+            });
+            this.toolManager.onMouseDown(mouseEvent);
+        }
+    }
+
+    handleTouchMove(e) {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                button: 0
+            });
+            this.toolManager.onMouseMove(mouseEvent);
+        }
+    }
+
+    handleTouchEnd(e) {
+        e.preventDefault();
+        const mouseEvent = new MouseEvent('mouseup', {
+            button: 0
+        });
+        this.toolManager.onMouseUp(mouseEvent);
     }
 
     /**
@@ -1420,6 +1516,13 @@ class FotoEditApp {
     }
 
     openNewProjectModal() {
+        // Adapter les valeurs par défaut selon la taille d'écran
+        const isMobile = window.innerWidth <= 768;
+        const defaultWidth = isMobile ? Math.min(800, window.innerWidth - 100) : 1920;
+        const defaultHeight = isMobile ? Math.min(600, window.innerHeight - 200) : 1080;
+
+        document.getElementById('new-width').value = defaultWidth;
+        document.getElementById('new-height').value = defaultHeight;
         document.getElementById('new-project-modal').classList.add('active');
     }
 

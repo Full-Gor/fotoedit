@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FotoEdit - Éditeur d'Images Professionnel</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,6 +11,9 @@
     <div id="app">
         <!-- Barre de menu supérieure -->
         <header class="menu-bar">
+            <button class="mobile-menu-toggle" id="mobile-menu-toggle" title="Menu">
+                <i class="fas fa-bars"></i>
+            </button>
             <div class="logo">
                 <i class="fas fa-image"></i>
                 <span>FotoEdit</span>
@@ -83,8 +86,14 @@
                 <button id="zoom-in" title="Zoom +"><i class="fas fa-search-plus"></i></button>
                 <button id="zoom-out" title="Zoom -"><i class="fas fa-search-minus"></i></button>
                 <button id="zoom-fit" title="Ajuster"><i class="fas fa-compress-arrows-alt"></i></button>
+                <button class="mobile-panel-toggle" id="mobile-panel-toggle" title="Panneaux">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
             </div>
         </header>
+
+        <!-- Overlay pour menu mobile -->
+        <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
 
         <div class="main-container">
             <!-- Barre d'outils gauche -->
