@@ -348,6 +348,12 @@ class ToolManager {
      */
     getCanvasPosition(e) {
         const rect = this.app.mainCanvas.getBoundingClientRect();
+
+        // Vérifier que layerManager existe
+        if (!this.app.layerManager) {
+            return { x: 0, y: 0 };
+        }
+
         const scaleX = this.app.layerManager.width / rect.width;
         const scaleY = this.app.layerManager.height / rect.height;
 

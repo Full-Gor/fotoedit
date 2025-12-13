@@ -132,8 +132,31 @@ class FotoEditApp {
      */
     handleTouchStart(e) {
         e.preventDefault();
+
+        // Gestion du zoom avec deux doigts
+        if (e.touches.length === 2) {
+            this.initialPinchDistance = this.getPinchDistance(e.touches);
+            this.initialZoom = this.zoom;
+            return;
+        }
+
         if (e.touches.length === 1) {
             const touch = e.touches[0];
+
+            // Long press pour définir la source du clone stamp
+            if (this.toolManager.currentTool === 'clone') {
+                this.longPressTimer = setTimeout(() => {
+                    const rect = this.mainCanvas.getBoundingClientRect();
+                    const scaleX = this.layerManager ? this.layerManager.width / rect.width : 1;
+                    const scaleY = this.layerManager ? this.layerManager.height / rect.height : 1;
+                    const x = (touch.clientX - rect.left) * scaleX;
+                    const y = (touch.clientY - rect.top) * scaleY;
+                    this.toolManager.setCloneSource(x, y);
+                    // Feedback visuel
+                    this.showToast('Source de clonage définie');
+                }, 500);
+            }
+
             const mouseEvent = new MouseEvent('mousedown', {
                 clientX: touch.clientX,
                 clientY: touch.clientY,
@@ -145,6 +168,22 @@ class FotoEditApp {
 
     handleTouchMove(e) {
         e.preventDefault();
+
+        // Annuler le long press si on bouge
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+
+        // Gestion du zoom avec deux doigts
+        if (e.touches.length === 2 && this.initialPinchDistance) {
+            const currentDistance = this.getPinchDistance(e.touches);
+            const scale = currentDistance / this.initialPinchDistance;
+            this.zoom = Math.max(0.1, Math.min(10, this.initialZoom * scale));
+            this.applyZoom();
+            return;
+        }
+
         if (e.touches.length === 1) {
             const touch = e.touches[0];
             const mouseEvent = new MouseEvent('mousemove', {
@@ -158,10 +197,45 @@ class FotoEditApp {
 
     handleTouchEnd(e) {
         e.preventDefault();
+
+        // Annuler le long press
+        if (this.longPressTimer) {
+            clearTimeout(this.longPressTimer);
+            this.longPressTimer = null;
+        }
+
+        // Reset pinch zoom
+        this.initialPinchDistance = null;
+
         const mouseEvent = new MouseEvent('mouseup', {
             button: 0
         });
         this.toolManager.onMouseUp(mouseEvent);
+    }
+
+    /**
+     * Calculer la distance entre deux touches (pinch zoom)
+     */
+    getPinchDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /**
+     * Afficher un message toast
+     */
+    showToast(message) {
+        let toast = document.getElementById('toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'toast';
+            toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:white;padding:10px 20px;border-radius:5px;z-index:9999;font-size:14px;transition:opacity 0.3s;';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 2000);
     }
 
     /**
@@ -765,7 +839,10 @@ class FotoEditApp {
      */
     createNewProject(width, height, bgColor = '#ffffff') {
         this.layerManager = new LayerManager(width, height);
-        this.layerManager.addListener(() => this.updateLayersPanel());
+        this.layerManager.addListener(() => {
+            this.updateLayersPanel();
+            this.render();
+        });
 
         // Créer le calque de fond
         this.layerManager.createBackgroundLayer(bgColor);
@@ -779,6 +856,7 @@ class FotoEditApp {
 
         // Afficher le canvas
         this.showCanvas();
+        this.render();
         this.zoomToFit();
         this.updateUI();
     }
@@ -809,7 +887,10 @@ class FotoEditApp {
             // Si aucun projet n'est ouvert, en créer un
             if (!this.isProjectOpen) {
                 this.layerManager = new LayerManager(image.width, image.height);
-                this.layerManager.addListener(() => this.updateLayersPanel());
+                this.layerManager.addListener(() => {
+                    this.updateLayersPanel();
+                    this.render();
+                });
                 this.mainCanvas.width = image.width;
                 this.mainCanvas.height = image.height;
             }
@@ -819,6 +900,7 @@ class FotoEditApp {
 
             this.saveHistory('Import image');
             this.showCanvas();
+            this.render();
             this.zoomToFit();
             this.updateUI();
         } catch (error) {
