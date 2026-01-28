@@ -105,6 +105,12 @@
                     <button class="tool-btn" data-tool="select" title="Sélection rectangulaire (Ctrl+M)">
                         <i class="far fa-square"></i>
                     </button>
+                    <button class="tool-btn" data-tool="lasso" title="Lasso (L)">
+                        <i class="fas fa-draw-polygon"></i>
+                    </button>
+                    <button class="tool-btn" data-tool="magic-wand" title="Baguette magique (W)">
+                        <i class="fas fa-magic"></i>
+                    </button>
                 </div>
                 <div class="tool-group">
                     <button class="tool-btn" data-tool="brush" title="Pinceau (Ctrl+B)">
@@ -259,6 +265,16 @@
                                 <option value="radial">Radial</option>
                             </select>
                         </div>
+                        <div class="option-group" id="tolerance-option" style="display: none;">
+                            <label>Tolérance</label>
+                            <input type="range" id="wand-tolerance" min="0" max="255" value="30">
+                            <span id="tolerance-value">30</span>
+                        </div>
+                        <div class="option-group" id="feather-option" style="display: none;">
+                            <label>Contour progressif</label>
+                            <input type="range" id="selection-feather" min="0" max="50" value="0">
+                            <span id="feather-value">0px</span>
+                        </div>
                     </div>
                 </div>
 
@@ -279,6 +295,12 @@
                             <button id="merge-layers" title="Fusionner vers le bas"><i class="fas fa-compress-alt"></i></button>
                             <button id="move-layer-up" title="Monter"><i class="fas fa-chevron-up"></i></button>
                             <button id="move-layer-down" title="Descendre"><i class="fas fa-chevron-down"></i></button>
+                        </div>
+                        <div class="layers-controls">
+                            <button id="add-mask" title="Ajouter un masque"><i class="fas fa-mask"></i></button>
+                            <button id="add-mask-from-selection" title="Masque depuis sélection"><i class="fas fa-object-ungroup"></i></button>
+                            <button id="remove-mask" title="Supprimer le masque"><i class="fas fa-times-circle"></i></button>
+                            <button id="apply-mask" title="Appliquer le masque"><i class="fas fa-check-circle"></i></button>
                         </div>
                         <div class="layer-properties">
                             <div class="option-group">
@@ -647,9 +669,17 @@
                     <h4>Sélection et transformation</h4>
                     <dl class="help-list">
                         <dt>Déplacer</dt>
-                        <dd>Déplace le contenu du calque. <kbd>Ctrl+V</kbd></dd>
-                        <dt>Sélection</dt>
+                        <dd>Déplace le contenu du calque. Affiche des poignées de redimensionnement sur la sélection active. <kbd>Ctrl+V</kbd></dd>
+                        <dt>Sélection rectangulaire</dt>
                         <dd>Sélectionne une zone rectangulaire. <kbd>Ctrl+M</kbd></dd>
+                        <dt>Lasso</dt>
+                        <dd>Sélection à main levée. Dessinez le contour de la zone à sélectionner. <kbd>L</kbd></dd>
+                        <dt>Baguette magique</dt>
+                        <dd>Sélectionne automatiquement les zones de couleur similaire. Réglez la tolérance dans les options. <kbd>W</kbd></dd>
+                        <dt>Copier / Couper / Coller</dt>
+                        <dd>Copie ou coupe la sélection, colle en tant que nouveau calque. <kbd>Ctrl+C</kbd> / <kbd>Ctrl+X</kbd> / <kbd>Ctrl+V</kbd></dd>
+                        <dt>Contour progressif</dt>
+                        <dd>Adoucit les bords de la sélection (lasso et baguette magique). Réglez dans les options de l'outil.</dd>
                         <dt>Recadrage</dt>
                         <dd>Recadre l'image selon une zone définie. <kbd>Ctrl+K</kbd></dd>
                     </dl>

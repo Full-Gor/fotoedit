@@ -42,7 +42,9 @@ class LayerManager {
             ctx: ctx,
             visible: true,
             opacity: 100,
-            blendMode: 'normal'
+            blendMode: 'normal',
+            mask: null,
+            maskEnabled: false
         };
 
         if (index !== null && index >= 0 && index <= this.layers.length) {
@@ -117,6 +119,16 @@ class LayerManager {
         newLayer.opacity = source.opacity;
         newLayer.blendMode = source.blendMode;
         newLayer.visible = source.visible;
+
+        // Copier le masque si présent
+        if (source.mask) {
+            const maskCopy = document.createElement('canvas');
+            maskCopy.width = this.width;
+            maskCopy.height = this.height;
+            maskCopy.getContext('2d').drawImage(source.mask, 0, 0);
+            newLayer.mask = maskCopy;
+            newLayer.maskEnabled = source.maskEnabled;
+        }
 
         this.notify();
         return newLayer;
@@ -310,13 +322,115 @@ class LayerManager {
             if (!layer.visible) continue;
             ctx.globalAlpha = layer.opacity / 100;
             ctx.globalCompositeOperation = this.getCompositeOperation(layer.blendMode);
-            ctx.drawImage(layer.canvas, 0, 0);
+
+            if (layer.mask && layer.maskEnabled) {
+                // Appliquer le masque de calque
+                const masked = document.createElement('canvas');
+                masked.width = this.width;
+                masked.height = this.height;
+                const mCtx = masked.getContext('2d');
+
+                mCtx.drawImage(layer.canvas, 0, 0);
+                mCtx.globalCompositeOperation = 'destination-in';
+                mCtx.drawImage(layer.mask, 0, 0);
+
+                ctx.drawImage(masked, 0, 0);
+            } else {
+                ctx.drawImage(layer.canvas, 0, 0);
+            }
         }
 
         ctx.globalAlpha = 1;
         ctx.globalCompositeOperation = 'source-over';
 
         return result;
+    }
+
+    /**
+     * Ajouter un masque au calque actif
+     */
+    addMask(index = this.activeLayerIndex, fillWhite = true) {
+        if (index < 0 || index >= this.layers.length) return null;
+
+        const layer = this.layers[index];
+        const mask = document.createElement('canvas');
+        mask.width = this.width;
+        mask.height = this.height;
+        const maskCtx = mask.getContext('2d');
+
+        if (fillWhite) {
+            maskCtx.fillStyle = 'white';
+            maskCtx.fillRect(0, 0, this.width, this.height);
+        }
+
+        layer.mask = mask;
+        layer.maskEnabled = true;
+        this.notify();
+        return mask;
+    }
+
+    /**
+     * Ajouter un masque à partir d'une sélection
+     */
+    addMaskFromSelection(index, selectionMask) {
+        if (index < 0 || index >= this.layers.length) return null;
+
+        const layer = this.layers[index];
+        const mask = document.createElement('canvas');
+        mask.width = this.width;
+        mask.height = this.height;
+        const maskCtx = mask.getContext('2d');
+
+        if (selectionMask) {
+            maskCtx.drawImage(selectionMask, 0, 0);
+        }
+
+        layer.mask = mask;
+        layer.maskEnabled = true;
+        this.notify();
+        return mask;
+    }
+
+    /**
+     * Supprimer le masque d'un calque
+     */
+    removeMask(index = this.activeLayerIndex, apply = false) {
+        if (index < 0 || index >= this.layers.length) return;
+
+        const layer = this.layers[index];
+        if (!layer.mask) return;
+
+        if (apply) {
+            // Appliquer le masque de façon destructive
+            const temp = document.createElement('canvas');
+            temp.width = this.width;
+            temp.height = this.height;
+            const tempCtx = temp.getContext('2d');
+
+            tempCtx.drawImage(layer.canvas, 0, 0);
+            tempCtx.globalCompositeOperation = 'destination-in';
+            tempCtx.drawImage(layer.mask, 0, 0);
+
+            layer.ctx.clearRect(0, 0, this.width, this.height);
+            layer.ctx.drawImage(temp, 0, 0);
+        }
+
+        layer.mask = null;
+        layer.maskEnabled = false;
+        this.notify();
+    }
+
+    /**
+     * Activer/désactiver le masque d'un calque
+     */
+    toggleMask(index = this.activeLayerIndex) {
+        if (index < 0 || index >= this.layers.length) return;
+
+        const layer = this.layers[index];
+        if (layer.mask) {
+            layer.maskEnabled = !layer.maskEnabled;
+            this.notify();
+        }
     }
 
     /**

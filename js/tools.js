@@ -26,7 +26,9 @@ class ToolManager {
             textSize: 32,
             textBold: false,
             textItalic: false,
-            gradientType: 'linear'
+            gradientType: 'linear',
+            tolerance: 30,
+            feather: 0
         };
 
         // Pour l'outil tampon de clonage
@@ -35,6 +37,9 @@ class ToolManager {
 
         // Pour l'outil de sélection
         this.selection = null;
+
+        // Pour le lasso
+        this.lassoPoints = [];
 
         // Pour l'outil de recadrage
         this.cropRect = null;
@@ -67,6 +72,8 @@ class ToolManager {
         const cursors = {
             move: 'move',
             select: 'crosshair',
+            lasso: 'crosshair',
+            'magic-wand': 'crosshair',
             brush: 'crosshair',
             eraser: 'crosshair',
             bucket: 'crosshair',
@@ -96,6 +103,7 @@ class ToolManager {
         // Afficher les options pertinentes
         const brushTools = ['brush', 'eraser', 'clone'];
         const shapeTools = ['line', 'rectangle', 'ellipse'];
+        const selectionTools = ['select', 'lasso', 'magic-wand'];
 
         if (brushTools.includes(this.currentTool)) {
             document.getElementById('brush-options').style.display = 'block';
@@ -119,6 +127,14 @@ class ToolManager {
 
         if (this.currentTool === 'bucket') {
             document.getElementById('brush-opacity-option').style.display = 'block';
+        }
+
+        if (this.currentTool === 'magic-wand') {
+            document.getElementById('tolerance-option').style.display = 'block';
+        }
+
+        if (selectionTools.includes(this.currentTool)) {
+            document.getElementById('feather-option').style.display = 'block';
         }
     }
 
@@ -207,6 +223,15 @@ class ToolManager {
             case 'select':
                 this.selection = { x: pos.x, y: pos.y, width: 0, height: 0 };
                 break;
+            case 'lasso':
+                this.lassoPoints = [{ x: pos.x, y: pos.y }];
+                this.app.selectionMask = null;
+                this.app.selectionPath = null;
+                break;
+            case 'magic-wand':
+                this.magicWandSelect(pos.x, pos.y);
+                this.isDrawing = false;
+                break;
             case 'crop':
                 this.cropRect = { x: pos.x, y: pos.y, width: 0, height: 0 };
                 break;
@@ -265,6 +290,12 @@ class ToolManager {
                 break;
             case 'select':
                 this.updateSelection(pos.x, pos.y);
+                break;
+            case 'lasso':
+                if (this.lassoPoints.length > 0) {
+                    this.lassoPoints.push({ x: pos.x, y: pos.y });
+                    this.app.renderLassoPreview(this.lassoPoints);
+                }
                 break;
             case 'crop':
                 this.updateCropRect(pos.x, pos.y);
@@ -332,6 +363,9 @@ class ToolManager {
                 break;
             case 'select':
                 this.finalizeSelection();
+                break;
+            case 'lasso':
+                this.finalizeLasso();
                 break;
             case 'crop':
                 this.showCropOverlay();
@@ -761,6 +795,182 @@ class ToolManager {
         this.textPosition = { x, y };
         document.getElementById('text-modal').classList.add('active');
         document.getElementById('text-input').focus();
+    }
+
+    /**
+     * Finaliser la sélection lasso
+     */
+    finalizeLasso() {
+        if (!this.lassoPoints || this.lassoPoints.length < 3) {
+            this.lassoPoints = [];
+            return;
+        }
+
+        // Calculer le rectangle englobant
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const p of this.lassoPoints) {
+            minX = Math.min(minX, p.x);
+            minY = Math.min(minY, p.y);
+            maxX = Math.max(maxX, p.x);
+            maxY = Math.max(maxY, p.y);
+        }
+
+        const width = Math.ceil(maxX - minX);
+        const height = Math.ceil(maxY - minY);
+        if (width <= 0 || height <= 0) return;
+
+        // Créer le masque de sélection
+        const layer = this.app.layerManager.getActiveLayer();
+        if (!layer) return;
+
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = layer.canvas.width;
+        maskCanvas.height = layer.canvas.height;
+        const maskCtx = maskCanvas.getContext('2d');
+
+        // Remplir le chemin du lasso
+        maskCtx.fillStyle = 'white';
+        maskCtx.beginPath();
+        maskCtx.moveTo(this.lassoPoints[0].x, this.lassoPoints[0].y);
+        for (let i = 1; i < this.lassoPoints.length; i++) {
+            maskCtx.lineTo(this.lassoPoints[i].x, this.lassoPoints[i].y);
+        }
+        maskCtx.closePath();
+        maskCtx.fill();
+
+        // Appliquer le contour progressif (feather)
+        const feather = this.options.feather || 0;
+        if (feather > 0) {
+            this.applyFeatherToMask(maskCanvas, feather);
+        }
+
+        // Stocker la sélection
+        this.app.selectionMask = maskCanvas;
+        this.app.selectionPath = [...this.lassoPoints];
+        this.app.setSelection({
+            x: Math.floor(minX),
+            y: Math.floor(minY),
+            width: width,
+            height: height
+        });
+
+        this.lassoPoints = [];
+    }
+
+    /**
+     * Sélection par baguette magique
+     */
+    magicWandSelect(x, y) {
+        const layer = this.app.layerManager.getActiveLayer();
+        if (!layer) return;
+
+        const tolerance = this.options.tolerance || 30;
+        const ctx = layer.ctx;
+        const imageData = ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+        const data = imageData.data;
+        const w = imageData.width;
+        const h = imageData.height;
+
+        const startX = Math.floor(x);
+        const startY = Math.floor(y);
+        if (startX < 0 || startX >= w || startY < 0 || startY >= h) return;
+
+        const startIdx = (startY * w + startX) * 4;
+        const startR = data[startIdx];
+        const startG = data[startIdx + 1];
+        const startB = data[startIdx + 2];
+        const startA = data[startIdx + 3];
+
+        // Créer le masque de sélection
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = w;
+        maskCanvas.height = h;
+        const maskCtx = maskCanvas.getContext('2d');
+        const maskData = maskCtx.createImageData(w, h);
+        const mask = maskData.data;
+
+        // Flood fill pour trouver les pixels similaires
+        const visited = new Uint8Array(w * h);
+        const stack = [[startX, startY]];
+        let minX = startX, minY = startY, maxX = startX, maxY = startY;
+
+        while (stack.length > 0) {
+            const [px, py] = stack.pop();
+            if (px < 0 || px >= w || py < 0 || py >= h) continue;
+
+            const key = py * w + px;
+            if (visited[key]) continue;
+
+            const idx = key * 4;
+            const dr = Math.abs(data[idx] - startR);
+            const dg = Math.abs(data[idx + 1] - startG);
+            const db = Math.abs(data[idx + 2] - startB);
+            const da = Math.abs(data[idx + 3] - startA);
+
+            if (dr > tolerance || dg > tolerance || db > tolerance || da > tolerance) continue;
+
+            visited[key] = 1;
+            mask[idx] = 255;
+            mask[idx + 1] = 255;
+            mask[idx + 2] = 255;
+            mask[idx + 3] = 255;
+
+            minX = Math.min(minX, px);
+            minY = Math.min(minY, py);
+            maxX = Math.max(maxX, px);
+            maxY = Math.max(maxY, py);
+
+            stack.push([px + 1, py]);
+            stack.push([px - 1, py]);
+            stack.push([px, py + 1]);
+            stack.push([px, py - 1]);
+        }
+
+        maskCtx.putImageData(maskData, 0, 0);
+
+        // Appliquer le contour progressif
+        const feather = this.options.feather || 0;
+        if (feather > 0) {
+            this.applyFeatherToMask(maskCanvas, feather);
+        }
+
+        const selWidth = maxX - minX + 1;
+        const selHeight = maxY - minY + 1;
+
+        if (selWidth <= 0 || selHeight <= 0) return;
+
+        this.app.selectionMask = maskCanvas;
+        this.app.selectionPath = null;
+        this.app.setSelection({
+            x: minX,
+            y: minY,
+            width: selWidth,
+            height: selHeight
+        });
+
+        this.app.render();
+    }
+
+    /**
+     * Appliquer un contour progressif (feather) au masque de sélection
+     */
+    applyFeatherToMask(maskCanvas, radius) {
+        const ctx = maskCanvas.getContext('2d');
+        const w = maskCanvas.width;
+        const h = maskCanvas.height;
+
+        // Appliquer un flou gaussien au masque
+        // Utiliser le filtre CSS canvas pour le flou
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = w;
+        tempCanvas.height = h;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        tempCtx.filter = `blur(${radius}px)`;
+        tempCtx.drawImage(maskCanvas, 0, 0);
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(tempCanvas, 0, 0);
     }
 
     /**

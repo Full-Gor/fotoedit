@@ -696,6 +696,29 @@ body {
     cursor: not-allowed;
 }
 
+/* Indicateur de masque de calque */
+.layer-mask-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    color: var(--accent-color);
+    cursor: pointer;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.layer-mask-indicator:hover {
+    background-color: var(--bg-hover);
+}
+
+.layer-mask-indicator.disabled {
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
 /* Panneau historique */
 .history-list {
     max-height: 150px;

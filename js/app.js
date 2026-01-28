@@ -22,9 +22,17 @@ class FotoEditApp {
         this.panY = 0;
         this.isProjectOpen = false;
         this.selection = null;
+        this.selectionMask = null;
+        this.selectionPath = null;
+
+        // Presse-papiers interne
+        this.clipboard = null;
 
         // Données d'aperçu pour les ajustements
         this.previewData = null;
+
+        // Animation marching ants
+        this._selectionAnimFrame = null;
 
         // Initialiser l'application
         this.init();
@@ -252,6 +260,9 @@ class FotoEditApp {
         // Menu Édition
         document.getElementById('undo-btn').addEventListener('click', () => this.undo());
         document.getElementById('redo-btn').addEventListener('click', () => this.redo());
+        document.getElementById('copy-btn').addEventListener('click', () => this.copySelection());
+        document.getElementById('paste-btn').addEventListener('click', () => this.pasteClipboard());
+        document.getElementById('cut-btn').addEventListener('click', () => this.cutSelection());
 
         // Menu Image
         document.getElementById('resize-image').addEventListener('click', () => this.openResizeModal());
@@ -377,6 +388,18 @@ class FotoEditApp {
         document.getElementById('gradient-type').addEventListener('change', (e) => {
             this.toolManager.options.gradientType = e.target.value;
         });
+
+        // Tolérance (baguette magique)
+        document.getElementById('wand-tolerance').addEventListener('input', (e) => {
+            this.toolManager.options.tolerance = parseInt(e.target.value);
+            document.getElementById('tolerance-value').textContent = e.target.value;
+        });
+
+        // Contour progressif (feather)
+        document.getElementById('selection-feather').addEventListener('input', (e) => {
+            this.toolManager.options.feather = parseInt(e.target.value);
+            document.getElementById('feather-value').textContent = e.target.value + 'px';
+        });
     }
 
     /**
@@ -397,6 +420,12 @@ class FotoEditApp {
         document.getElementById('merge-layers').addEventListener('click', () => this.mergeLayers());
         document.getElementById('move-layer-up').addEventListener('click', () => this.moveLayerUp());
         document.getElementById('move-layer-down').addEventListener('click', () => this.moveLayerDown());
+
+        // Contrôles des masques
+        document.getElementById('add-mask').addEventListener('click', () => this.addLayerMask());
+        document.getElementById('add-mask-from-selection').addEventListener('click', () => this.addMaskFromSelection());
+        document.getElementById('remove-mask').addEventListener('click', () => this.removeLayerMask());
+        document.getElementById('apply-mask').addEventListener('click', () => this.applyLayerMask());
 
         // Opacité et mode de fusion des calques
         document.getElementById('layer-opacity').addEventListener('input', (e) => {
@@ -711,6 +740,22 @@ class FotoEditApp {
                         e.preventDefault();
                         this.redo();
                         break;
+                    case 'c':
+                        e.preventDefault();
+                        this.copySelection();
+                        break;
+                    case 'x':
+                        e.preventDefault();
+                        this.cutSelection();
+                        break;
+                    case 'v':
+                        e.preventDefault();
+                        if (this.clipboard) {
+                            this.pasteClipboard();
+                        } else {
+                            this.selectTool('move');
+                        }
+                        break;
                     case 's':
                         e.preventDefault();
                         this.exportImage('png');
@@ -738,10 +783,6 @@ class FotoEditApp {
                         this.zoomToFit();
                         break;
                     // Outils (Ctrl + lettre)
-                    case 'v':
-                        e.preventDefault();
-                        this.selectTool('move');
-                        break;
                     case 'm':
                         e.preventDefault();
                         this.selectTool('select');
@@ -804,6 +845,12 @@ class FotoEditApp {
 
             // Raccourcis sans Ctrl
             switch (key) {
+                case 'l':
+                    this.selectTool('lasso');
+                    break;
+                case 'w':
+                    this.selectTool('magic-wand');
+                    break;
                 case 'x':
                     // Permuter les couleurs
                     document.getElementById('swap-colors').click();
@@ -958,6 +1005,10 @@ class FotoEditApp {
         // Dessiner la sélection en pointillés
         if (this.selection) {
             this.renderSelection();
+            // Dessiner les poignées de déplacement si l'outil move est actif
+            if (this.toolManager.currentTool === 'move') {
+                this.renderMoveHandles();
+            }
         }
 
         // Dessiner l'overlay de recadrage
@@ -1125,6 +1176,7 @@ class FotoEditApp {
                     <canvas></canvas>
                 </div>
                 <span class="layer-name">${layer.name}</span>
+                ${layer.mask ? `<span class="layer-mask-indicator ${layer.maskEnabled ? 'active' : 'disabled'}" title="Masque${layer.maskEnabled ? ' (actif)' : ' (désactivé)'}"><i class="fas fa-mask"></i></span>` : ''}
             `;
 
             // Mettre à jour la miniature
@@ -1150,6 +1202,15 @@ class FotoEditApp {
                 this.layerManager.setLayerVisibility(i, !layer.visible);
                 this.render();
             });
+
+            const maskIndicator = item.querySelector('.layer-mask-indicator');
+            if (maskIndicator) {
+                maskIndicator.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.layerManager.toggleMask(i);
+                    this.render();
+                });
+            }
 
             // Double-clic pour renommer
             item.querySelector('.layer-name').addEventListener('dblclick', (e) => {
@@ -1487,10 +1548,40 @@ class FotoEditApp {
     setSelection(rect) {
         this.selection = rect;
         this.render();
+        this.startSelectionAnimation();
+    }
+
+    /**
+     * Démarrer l'animation de la sélection (marching ants)
+     */
+    startSelectionAnimation() {
+        if (this._selectionAnimFrame) return;
+        const animate = () => {
+            if (!this.selection) {
+                this._selectionAnimFrame = null;
+                return;
+            }
+            this.render();
+            this._selectionAnimFrame = requestAnimationFrame(animate);
+        };
+        this._selectionAnimFrame = requestAnimationFrame(animate);
+    }
+
+    /**
+     * Arrêter l'animation de la sélection
+     */
+    stopSelectionAnimation() {
+        if (this._selectionAnimFrame) {
+            cancelAnimationFrame(this._selectionAnimFrame);
+            this._selectionAnimFrame = null;
+        }
     }
 
     clearSelection() {
         this.selection = null;
+        this.selectionMask = null;
+        this.selectionPath = null;
+        this.stopSelectionAnimation();
         this.render();
     }
 
@@ -1516,17 +1607,133 @@ class FotoEditApp {
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-        // Bordure blanche en dessous
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(sel.x, sel.y, sel.width, sel.height);
+        // Si on a un chemin de lasso, dessiner le chemin
+        if (this.selectionPath && this.selectionPath.length > 2) {
+            // Bordure blanche en dessous
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.moveTo(this.selectionPath[0].x, this.selectionPath[0].y);
+            for (let i = 1; i < this.selectionPath.length; i++) {
+                ctx.lineTo(this.selectionPath[i].x, this.selectionPath[i].y);
+            }
+            ctx.closePath();
+            ctx.stroke();
 
-        // Bordure noire en pointillés par-dessus (marching ants)
+            // Bordure noire en pointillés par-dessus (marching ants)
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 4]);
+            ctx.lineDashOffset = -(Date.now() / 80) % 10;
+            ctx.beginPath();
+            ctx.moveTo(this.selectionPath[0].x, this.selectionPath[0].y);
+            for (let i = 1; i < this.selectionPath.length; i++) {
+                ctx.lineTo(this.selectionPath[i].x, this.selectionPath[i].y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+        } else {
+            // Sélection rectangulaire standard
+            // Bordure blanche en dessous
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(sel.x, sel.y, sel.width, sel.height);
+
+            // Bordure noire en pointillés par-dessus (marching ants)
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 4]);
+            ctx.lineDashOffset = -(Date.now() / 80) % 10;
+            ctx.strokeRect(sel.x, sel.y, sel.width, sel.height);
+        }
+
+        ctx.restore();
+    }
+
+    /**
+     * Dessiner l'aperçu du lasso en cours de tracé
+     */
+    renderLassoPreview(points) {
+        if (!points || points.length < 2) return;
+
+        this.render();
+        const ctx = this.mainCanvas.getContext('2d');
+
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        // Dessiner le chemin du lasso
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.stroke();
+
         ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([6, 4]);
-        ctx.lineDashOffset = -(Date.now() / 80) % 10;
-        ctx.strokeRect(sel.x, sel.y, sel.width, sel.height);
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.lineDashOffset = -(Date.now() / 80) % 8;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.stroke();
+
+        // Ligne de retour au point de départ
+        ctx.strokeStyle = 'rgba(0, 120, 212, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 2]);
+        ctx.beginPath();
+        ctx.moveTo(points[points.length - 1].x, points[points.length - 1].y);
+        ctx.lineTo(points[0].x, points[0].y);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    /**
+     * Dessiner les poignées de déplacement/redimensionnement
+     */
+    renderMoveHandles() {
+        if (!this.selection) return;
+
+        const ctx = this.mainCanvas.getContext('2d');
+        const sel = this.selection;
+
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        const handleSize = 8;
+        const half = handleSize / 2;
+
+        // Positions des 8 poignées
+        const handles = [
+            { x: sel.x, y: sel.y },                                    // NW
+            { x: sel.x + sel.width / 2, y: sel.y },                    // N
+            { x: sel.x + sel.width, y: sel.y },                        // NE
+            { x: sel.x + sel.width, y: sel.y + sel.height / 2 },      // E
+            { x: sel.x + sel.width, y: sel.y + sel.height },          // SE
+            { x: sel.x + sel.width / 2, y: sel.y + sel.height },      // S
+            { x: sel.x, y: sel.y + sel.height },                      // SW
+            { x: sel.x, y: sel.y + sel.height / 2 }                   // W
+        ];
+
+        for (const h of handles) {
+            // Fond blanc
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(h.x - half, h.y - half, handleSize, handleSize);
+            // Bordure bleue
+            ctx.strokeStyle = '#0078d4';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([]);
+            ctx.strokeRect(h.x - half, h.y - half, handleSize, handleSize);
+        }
 
         ctx.restore();
     }
@@ -1535,16 +1742,189 @@ class FotoEditApp {
         if (!this.selection || !this.layerManager) return;
         const layer = this.layerManager.getActiveLayer();
         if (layer) {
-            layer.ctx.clearRect(
-                this.selection.x,
-                this.selection.y,
-                this.selection.width,
-                this.selection.height
-            );
+            if (this.selectionMask) {
+                // Supprimer uniquement les pixels dans le masque
+                this.clearWithMask(layer, this.selectionMask);
+            } else {
+                layer.ctx.clearRect(
+                    this.selection.x,
+                    this.selection.y,
+                    this.selection.width,
+                    this.selection.height
+                );
+            }
             this.render();
             this.saveHistory('Supprimer sélection');
         }
         this.clearSelection();
+    }
+
+    /**
+     * Effacer les pixels d'un calque en utilisant un masque
+     */
+    clearWithMask(layer, mask) {
+        const w = layer.canvas.width;
+        const h = layer.canvas.height;
+        const layerData = layer.ctx.getImageData(0, 0, w, h);
+        const maskCtx = mask.getContext('2d');
+        const maskData = maskCtx.getImageData(0, 0, w, h);
+
+        for (let i = 0; i < layerData.data.length; i += 4) {
+            if (maskData.data[i + 3] > 0) {
+                const maskAlpha = maskData.data[i + 3] / 255;
+                layerData.data[i + 3] = Math.round(layerData.data[i + 3] * (1 - maskAlpha));
+            }
+        }
+
+        layer.ctx.putImageData(layerData, 0, 0);
+    }
+
+    /**
+     * Copier la sélection dans le presse-papiers interne
+     */
+    copySelection() {
+        if (!this.selection || !this.layerManager) return;
+        const layer = this.layerManager.getActiveLayer();
+        if (!layer) return;
+
+        const sel = this.selection;
+        const clipCanvas = document.createElement('canvas');
+        clipCanvas.width = sel.width;
+        clipCanvas.height = sel.height;
+        const clipCtx = clipCanvas.getContext('2d');
+
+        if (this.selectionMask) {
+            // Copier avec masque
+            const w = layer.canvas.width;
+            const h = layer.canvas.height;
+            const srcData = layer.ctx.getImageData(sel.x, sel.y, sel.width, sel.height);
+            const maskCtx = this.selectionMask.getContext('2d');
+            const maskData = maskCtx.getImageData(sel.x, sel.y, sel.width, sel.height);
+
+            for (let i = 0; i < srcData.data.length; i += 4) {
+                const maskAlpha = maskData.data[i + 3] / 255;
+                srcData.data[i + 3] = Math.round(srcData.data[i + 3] * maskAlpha);
+            }
+
+            clipCtx.putImageData(srcData, 0, 0);
+        } else {
+            // Copier rectangle
+            clipCtx.drawImage(
+                layer.canvas,
+                sel.x, sel.y, sel.width, sel.height,
+                0, 0, sel.width, sel.height
+            );
+        }
+
+        this.clipboard = {
+            canvas: clipCanvas,
+            width: sel.width,
+            height: sel.height
+        };
+
+        this.showToast('Sélection copiée');
+    }
+
+    /**
+     * Couper la sélection
+     */
+    cutSelection() {
+        if (!this.selection || !this.layerManager) return;
+        this.copySelection();
+
+        const layer = this.layerManager.getActiveLayer();
+        if (layer) {
+            if (this.selectionMask) {
+                this.clearWithMask(layer, this.selectionMask);
+            } else {
+                layer.ctx.clearRect(
+                    this.selection.x,
+                    this.selection.y,
+                    this.selection.width,
+                    this.selection.height
+                );
+            }
+            this.render();
+            this.saveHistory('Couper');
+        }
+        this.clearSelection();
+    }
+
+    /**
+     * Coller le presse-papiers en tant que nouveau calque
+     */
+    pasteClipboard() {
+        if (!this.clipboard || !this.layerManager) return;
+
+        const newLayer = this.layerManager.createLayer('Collé');
+
+        // Centrer le contenu collé
+        const x = Math.round((this.layerManager.width - this.clipboard.width) / 2);
+        const y = Math.round((this.layerManager.height - this.clipboard.height) / 2);
+
+        newLayer.ctx.drawImage(this.clipboard.canvas, Math.max(0, x), Math.max(0, y));
+
+        this.saveHistory('Coller');
+        this.render();
+        this.showToast('Collé en tant que nouveau calque');
+    }
+
+    // ==========================================
+    // Masques de calque
+    // ==========================================
+
+    addLayerMask() {
+        if (!this.layerManager) return;
+        this.layerManager.addMask();
+        this.saveHistory('Ajouter masque');
+        this.render();
+        this.showToast('Masque ajouté');
+    }
+
+    addMaskFromSelection() {
+        if (!this.layerManager || !this.selection) return;
+
+        if (this.selectionMask) {
+            this.layerManager.addMaskFromSelection(
+                this.layerManager.activeLayerIndex,
+                this.selectionMask
+            );
+        } else {
+            // Créer un masque rectangulaire
+            const sel = this.selection;
+            const mask = document.createElement('canvas');
+            mask.width = this.layerManager.width;
+            mask.height = this.layerManager.height;
+            const maskCtx = mask.getContext('2d');
+            maskCtx.fillStyle = 'white';
+            maskCtx.fillRect(sel.x, sel.y, sel.width, sel.height);
+
+            this.layerManager.addMaskFromSelection(
+                this.layerManager.activeLayerIndex,
+                mask
+            );
+        }
+
+        this.saveHistory('Masque depuis sélection');
+        this.clearSelection();
+        this.render();
+        this.showToast('Masque créé depuis la sélection');
+    }
+
+    removeLayerMask() {
+        if (!this.layerManager) return;
+        this.layerManager.removeMask(this.layerManager.activeLayerIndex, false);
+        this.saveHistory('Supprimer masque');
+        this.render();
+        this.showToast('Masque supprimé');
+    }
+
+    applyLayerMask() {
+        if (!this.layerManager) return;
+        this.layerManager.removeMask(this.layerManager.activeLayerIndex, true);
+        this.saveHistory('Appliquer masque');
+        this.render();
+        this.showToast('Masque appliqué');
     }
 
     // ==========================================
@@ -1615,6 +1995,8 @@ class FotoEditApp {
         const toolNames = {
             move: 'Déplacer',
             select: 'Sélection',
+            lasso: 'Lasso',
+            'magic-wand': 'Baguette magique',
             brush: 'Pinceau',
             eraser: 'Gomme',
             bucket: 'Remplissage',
@@ -1668,7 +2050,11 @@ class FotoEditApp {
             'Niveaux de gris': 'adjust',
             'Sépia': 'sun',
             'Inverser': 'exchange-alt',
-            'Déplacer': 'arrows-alt'
+            'Déplacer': 'arrows-alt',
+            'Tampon': 'stamp',
+            'Couper': 'cut',
+            'Coller': 'paste',
+            'Supprimer sélection': 'trash-alt'
         };
 
         states.forEach((state, index) => {
