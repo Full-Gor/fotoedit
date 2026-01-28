@@ -369,6 +369,8 @@ class LayerManager {
             ctx.rotate(radians);
             ctx.drawImage(oldCanvas, -this.width / 2, -this.height / 2);
 
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
             layer.canvas = newCanvas;
             layer.ctx = ctx;
         }
@@ -396,6 +398,9 @@ class LayerManager {
             ctx.rotate((clockwise ? 90 : -90) * Math.PI / 180);
             ctx.drawImage(oldCanvas, -this.width / 2, -this.height / 2);
 
+            // Reset transform pour éviter les bugs d'outils
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
             layer.canvas = newCanvas;
             layer.ctx = ctx;
         }
@@ -420,6 +425,8 @@ class LayerManager {
             ctx.scale(-1, 1);
             ctx.drawImage(oldCanvas, 0, 0);
 
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
             layer.canvas = newCanvas;
             layer.ctx = ctx;
         }
@@ -440,6 +447,8 @@ class LayerManager {
             ctx.translate(0, this.height);
             ctx.scale(1, -1);
             ctx.drawImage(oldCanvas, 0, 0);
+
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
 
             layer.canvas = newCanvas;
             layer.ctx = ctx;

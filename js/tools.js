@@ -161,6 +161,8 @@ class ToolManager {
         this.startY = pos.y;
         this.lastX = pos.x;
         this.lastY = pos.y;
+        this.lastScreenX = e.clientX;
+        this.lastScreenY = e.clientY;
         this.isDrawing = true;
 
         const layer = this.app.layerManager.getActiveLayer();
@@ -268,7 +270,9 @@ class ToolManager {
                 this.updateCropRect(pos.x, pos.y);
                 break;
             case 'hand':
-                this.pan(pos.x - this.lastX, pos.y - this.lastY);
+                this.pan(e.clientX - this.lastScreenX, e.clientY - this.lastScreenY);
+                this.lastScreenX = e.clientX;
+                this.lastScreenY = e.clientY;
                 break;
             case 'move':
                 if (layer) {
@@ -296,9 +300,12 @@ class ToolManager {
 
         switch (this.currentTool) {
             case 'brush':
-            case 'clone':
                 this.applyTempCanvas();
                 this.app.saveHistory('Pinceau');
+                break;
+            case 'clone':
+                this.applyTempCanvas();
+                this.app.saveHistory('Tampon');
                 break;
             case 'eraser':
                 this.app.saveHistory('Gomme');
@@ -418,8 +425,11 @@ class ToolManager {
         const size = this.options.brushSize;
         const hardness = this.options.brushHardness;
 
+        // Sauvegarder et reset complet du contexte
         ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.globalCompositeOperation = 'destination-out';
+        ctx.globalAlpha = this.options.brushOpacity / 100;
 
         // Pour une gomme douce, utiliser des cercles avec dégradé
         if (hardness < 100) {
@@ -430,9 +440,9 @@ class ToolManager {
                     point.x, point.y, 0,
                     point.x, point.y, size / 2
                 );
-                gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
-                gradient.addColorStop(hardness / 100, 'rgba(0, 0, 0, 1)');
-                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                gradient.addColorStop(Math.max(0.01, hardness / 100), 'rgba(255, 255, 255, 1)');
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
@@ -441,7 +451,8 @@ class ToolManager {
             }
         } else {
             // Gomme dure - trait simple
-            ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 1)';
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.lineWidth = size;
@@ -721,7 +732,9 @@ class ToolManager {
      * Pan (déplacement de la vue)
      */
     pan(dx, dy) {
-        // Implémenté dans l'app principale via CSS transform
+        this.app.panX += dx;
+        this.app.panY += dy;
+        this.app.applyZoom();
     }
 
     /**

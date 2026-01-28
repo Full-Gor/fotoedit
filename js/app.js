@@ -446,16 +446,21 @@ class FotoEditApp {
             });
         });
 
-        document.getElementById('create-project').addEventListener('click', () => {
-            const width = parseInt(document.getElementById('new-width').value);
-            const height = parseInt(document.getElementById('new-height').value);
-            const bgType = document.querySelector('input[name="bg-type"]:checked').value;
+        document.getElementById('create-project').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const width = parseInt(document.getElementById('new-width').value) || 800;
+            const height = parseInt(document.getElementById('new-height').value) || 600;
+            const bgTypeEl = document.querySelector('input[name="bg-type"]:checked');
+            const bgType = bgTypeEl ? bgTypeEl.value : 'white';
             let bgColor = 'transparent';
             if (bgType === 'white') bgColor = '#ffffff';
             else if (bgType === 'color') bgColor = document.getElementById('new-bg-color').value;
 
-            this.createNewProject(width, height, bgColor);
             document.getElementById('new-project-modal').classList.remove('active');
+            // Petit délai pour que la modale se ferme avant la création
+            requestAnimationFrame(() => {
+                this.createNewProject(width, height, bgColor);
+            });
         });
 
         // Modal Redimensionner
@@ -949,6 +954,61 @@ class FotoEditApp {
             ctx.drawImage(this.toolManager.tempCanvas, 0, 0);
             ctx.globalAlpha = 1;
         }
+
+        // Dessiner la sélection en pointillés
+        if (this.selection) {
+            this.renderSelection();
+        }
+
+        // Dessiner l'overlay de recadrage
+        if (this.toolManager.cropRect && this.toolManager.currentTool === 'crop') {
+            this.renderCropOverlay();
+        }
+    }
+
+    /**
+     * Dessiner l'overlay de recadrage sur le canvas
+     */
+    renderCropOverlay() {
+        const rect = this.toolManager.cropRect;
+        if (!rect || rect.width === 0 || rect.height === 0) return;
+
+        const ctx = this.mainCanvas.getContext('2d');
+        const w = this.mainCanvas.width;
+        const h = this.mainCanvas.height;
+
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        // Zone assombrie en dehors du recadrage
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, w, rect.y);
+        ctx.fillRect(0, rect.y, rect.x, rect.height);
+        ctx.fillRect(rect.x + rect.width, rect.y, w - rect.x - rect.width, rect.height);
+        ctx.fillRect(0, rect.y + rect.height, w, h - rect.y - rect.height);
+
+        // Bordure du recadrage
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+
+        // Grille des tiers
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 1;
+        const thirdW = rect.width / 3;
+        const thirdH = rect.height / 3;
+        for (let i = 1; i <= 2; i++) {
+            ctx.beginPath();
+            ctx.moveTo(rect.x + thirdW * i, rect.y);
+            ctx.lineTo(rect.x + thirdW * i, rect.y + rect.height);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(rect.x, rect.y + thirdH * i);
+            ctx.lineTo(rect.x + rect.width, rect.y + thirdH * i);
+            ctx.stroke();
+        }
+
+        ctx.restore();
     }
 
     /**
@@ -1156,11 +1216,13 @@ class FotoEditApp {
         const scaleY = availHeight / this.layerManager.height;
 
         this.zoom = Math.min(scaleX, scaleY, 1);
+        this.panX = 0;
+        this.panY = 0;
         this.applyZoom();
     }
 
     applyZoom() {
-        this.canvasContainer.style.transform = `scale(${this.zoom})`;
+        this.canvasContainer.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
         document.getElementById('zoom-level').textContent = Math.round(this.zoom * 100) + '%';
     }
 
@@ -1424,15 +1486,49 @@ class FotoEditApp {
 
     setSelection(rect) {
         this.selection = rect;
+        this.render();
     }
 
     clearSelection() {
         this.selection = null;
-        // Effacer visuellement la sélection
+        this.render();
     }
 
     drawSelection(rect) {
-        // Dessiner la sélection (marching ants)
+        // Le rendu de la sélection se fait dans render()
+        this.selection = {
+            x: Math.min(rect.x, rect.x + rect.width),
+            y: Math.min(rect.y, rect.y + rect.height),
+            width: Math.abs(rect.width),
+            height: Math.abs(rect.height)
+        };
+    }
+
+    /**
+     * Dessiner la sélection en pointillés sur le canvas principal
+     */
+    renderSelection() {
+        if (!this.selection || this.selection.width === 0 || this.selection.height === 0) return;
+
+        const ctx = this.mainCanvas.getContext('2d');
+        const sel = this.selection;
+
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        // Bordure blanche en dessous
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(sel.x, sel.y, sel.width, sel.height);
+
+        // Bordure noire en pointillés par-dessus (marching ants)
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.lineDashOffset = -(Date.now() / 80) % 10;
+        ctx.strokeRect(sel.x, sel.y, sel.width, sel.height);
+
+        ctx.restore();
     }
 
     deleteSelection() {
@@ -1456,7 +1552,13 @@ class FotoEditApp {
     // ==========================================
 
     drawCropOverlay(rect) {
-        // Dessiner l'overlay de recadrage
+        // Le rendu se fait dans render() via renderCropOverlay
+        this.toolManager.cropRect = {
+            x: Math.min(rect.x, rect.x + rect.width),
+            y: Math.min(rect.y, rect.y + rect.height),
+            width: Math.abs(rect.width),
+            height: Math.abs(rect.height)
+        };
     }
 
     showCropOverlay(rect) {
