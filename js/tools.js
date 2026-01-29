@@ -449,7 +449,7 @@ class ToolManager {
     }
 
     /**
-     * Effacer (gomme)
+     * Effacer (gomme) - utilise un canvas temporaire pour éviter les problèmes d'état
      */
     erase(x1, y1, x2, y2) {
         const layer = this.app.layerManager.getActiveLayer();
@@ -458,19 +458,20 @@ class ToolManager {
         const ctx = layer.ctx;
         const size = this.options.brushSize;
         const hardness = this.options.brushHardness;
+        const opacity = this.options.brushOpacity / 100;
 
-        // Sauvegarder et reset complet du contexte
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.globalAlpha = this.options.brushOpacity / 100;
+        // Utiliser un canvas temporaire pour isoler le rendu du trait
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = layer.canvas.width;
+        tempCanvas.height = layer.canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
 
-        // Pour une gomme douce, utiliser des cercles avec dégradé
+        // Dessiner le trait blanc sur le canvas temporaire (état propre)
         if (hardness < 100) {
             const points = Utils.getLinePoints(Math.round(x1), Math.round(y1), Math.round(x2), Math.round(y2));
 
             for (const point of points) {
-                const gradient = ctx.createRadialGradient(
+                const gradient = tempCtx.createRadialGradient(
                     point.x, point.y, 0,
                     point.x, point.y, size / 2
                 );
@@ -478,25 +479,30 @@ class ToolManager {
                 gradient.addColorStop(Math.max(0.01, hardness / 100), 'rgba(255, 255, 255, 1)');
                 gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, size / 2, 0, Math.PI * 2);
-                ctx.fill();
+                tempCtx.fillStyle = gradient;
+                tempCtx.beginPath();
+                tempCtx.arc(point.x, point.y, size / 2, 0, Math.PI * 2);
+                tempCtx.fill();
             }
         } else {
             // Gomme dure - trait simple
-            ctx.strokeStyle = 'rgba(255, 255, 255, 1)';
-            ctx.fillStyle = 'rgba(255, 255, 255, 1)';
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.lineWidth = size;
+            tempCtx.strokeStyle = 'white';
+            tempCtx.lineCap = 'round';
+            tempCtx.lineJoin = 'round';
+            tempCtx.lineWidth = size;
 
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
+            tempCtx.beginPath();
+            tempCtx.moveTo(x1, y1);
+            tempCtx.lineTo(x2, y2);
+            tempCtx.stroke();
         }
 
+        // Appliquer sur le calque avec destination-out
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.globalAlpha = opacity;
+        ctx.drawImage(tempCanvas, 0, 0);
         ctx.restore();
     }
 
