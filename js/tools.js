@@ -69,13 +69,22 @@ class ToolManager {
      */
     updateCursor() {
         const canvas = this.app.mainCanvas;
+
+        // Pour les outils pinceau/gomme, utiliser un curseur personnalisé
+        const brushTools = ['brush', 'eraser', 'clone'];
+        if (brushTools.includes(this.currentTool)) {
+            canvas.style.cursor = 'none';
+            this.showBrushCursor(true);
+            return;
+        } else {
+            this.showBrushCursor(false);
+        }
+
         const cursors = {
             move: 'move',
             select: 'crosshair',
             lasso: 'crosshair',
             'magic-wand': 'crosshair',
-            brush: 'crosshair',
-            eraser: 'crosshair',
             bucket: 'crosshair',
             gradient: 'crosshair',
             text: 'text',
@@ -83,12 +92,73 @@ class ToolManager {
             rectangle: 'crosshair',
             ellipse: 'crosshair',
             eyedropper: 'crosshair',
-            clone: 'crosshair',
             crop: 'crosshair',
             hand: 'grab',
             zoom: 'zoom-in'
         };
         canvas.style.cursor = cursors[this.currentTool] || 'default';
+    }
+
+    /**
+     * Afficher/masquer le curseur de pinceau personnalisé
+     */
+    showBrushCursor(show) {
+        let cursor = document.getElementById('brush-cursor');
+
+        if (!cursor && show) {
+            cursor = document.createElement('div');
+            cursor.id = 'brush-cursor';
+            cursor.style.cssText = `
+                position: fixed;
+                pointer-events: none;
+                border: 2px solid #fff;
+                border-radius: 50%;
+                box-shadow: 0 0 0 1px #000;
+                z-index: 10000;
+                transform: translate(-50%, -50%);
+                display: none;
+            `;
+            document.body.appendChild(cursor);
+
+            // Ajouter le listener de mouvement sur le document
+            this._brushCursorMove = (e) => this.updateBrushCursorPosition(e);
+            document.addEventListener('mousemove', this._brushCursorMove);
+        }
+
+        if (cursor) {
+            cursor.style.display = show ? 'block' : 'none';
+        }
+    }
+
+    /**
+     * Mettre à jour la position et taille du curseur de pinceau
+     */
+    updateBrushCursorPosition(e) {
+        const cursor = document.getElementById('brush-cursor');
+        if (!cursor) return;
+
+        const brushTools = ['brush', 'eraser', 'clone'];
+        if (!brushTools.includes(this.currentTool)) {
+            cursor.style.display = 'none';
+            return;
+        }
+
+        // Vérifier que le projet est ouvert
+        if (!this.app.layerManager) {
+            cursor.style.display = 'none';
+            return;
+        }
+
+        // Calculer la taille en pixels écran selon le zoom
+        const rect = this.app.mainCanvas.getBoundingClientRect();
+        const scaleX = rect.width / this.app.layerManager.width;
+        const size = Math.max(4, this.options.brushSize * scaleX);
+
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+        cursor.style.width = size + 'px';
+        cursor.style.height = size + 'px';
+        cursor.style.display = 'block';
     }
 
     /**
