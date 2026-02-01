@@ -519,96 +519,48 @@ class ToolManager {
     }
 
     /**
-     * Effacer (gomme) - manipulation directe des pixels alpha
+     * Effacer (gomme) - fonctionne comme le pinceau mais en mode effacement
      */
     erase(x1, y1, x2, y2) {
         const layer = this.app.layerManager.getActiveLayer();
         if (!layer) return;
 
         const ctx = layer.ctx;
-        const canvas = layer.canvas;
         const size = this.options.brushSize;
         const radius = size / 2;
         const hardness = this.options.brushHardness / 100;
         const opacity = this.options.brushOpacity / 100;
 
-        // Obtenir tous les points le long du trait
+        // Interpoler les points entre les deux positions pour un tracé fluide
         const points = Utils.getLinePoints(
             Math.round(x1), Math.round(y1),
             Math.round(x2), Math.round(y2)
         );
 
-        // Calculer la zone affectée (bounding box + marge)
-        let minX = Math.floor(Math.min(x1, x2) - radius);
-        let minY = Math.floor(Math.min(y1, y2) - radius);
-        let maxX = Math.ceil(Math.max(x1, x2) + radius);
-        let maxY = Math.ceil(Math.max(y1, y2) + radius);
-
-        // Clamp aux limites du canvas
-        minX = Math.max(0, minX);
-        minY = Math.max(0, minY);
-        maxX = Math.min(canvas.width, maxX);
-        maxY = Math.min(canvas.height, maxY);
-
-        const regionWidth = maxX - minX;
-        const regionHeight = maxY - minY;
-
-        if (regionWidth <= 0 || regionHeight <= 0) return;
-
-        // Obtenir les données de pixels de la zone affectée
-        const imageData = ctx.getImageData(minX, minY, regionWidth, regionHeight);
-        const data = imageData.data;
-
-        // Pour chaque point du trait, effacer les pixels dans le rayon
+        // Pour chaque point, dessiner un cercle d'effacement
         for (const point of points) {
-            const centerX = point.x - minX;
-            const centerY = point.y - minY;
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-out';
 
-            // Parcourir les pixels dans le carré englobant le cercle
-            const startPX = Math.max(0, Math.floor(centerX - radius));
-            const endPX = Math.min(regionWidth - 1, Math.ceil(centerX + radius));
-            const startPY = Math.max(0, Math.floor(centerY - radius));
-            const endPY = Math.min(regionHeight - 1, Math.ceil(centerY + radius));
+            // Créer un gradient radial pour simuler la dureté
+            const gradient = ctx.createRadialGradient(
+                point.x, point.y, 0,
+                point.x, point.y, radius
+            );
 
-            for (let py = startPY; py <= endPY; py++) {
-                for (let px = startPX; px <= endPX; px++) {
-                    // Distance du pixel au centre du point
-                    const dx = px - centerX;
-                    const dy = py - centerY;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+            // Le gradient simule la dureté: centre opaque, bords flous si dureté < 100%
+            const innerRadius = Math.max(0.01, hardness);
+            gradient.addColorStop(0, `rgba(0, 0, 0, ${opacity})`);
+            gradient.addColorStop(innerRadius, `rgba(0, 0, 0, ${opacity})`);
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
-                    if (distance <= radius) {
-                        const idx = (py * regionWidth + px) * 4;
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+            ctx.fill();
 
-                        // Calculer l'intensité d'effacement selon la distance et la dureté
-                        let eraseStrength;
-                        if (hardness >= 1) {
-                            // Gomme dure: effacement uniforme
-                            eraseStrength = opacity;
-                        } else {
-                            // Gomme douce: dégradé du centre vers les bords
-                            const normalizedDist = distance / radius;
-                            if (normalizedDist <= hardness) {
-                                eraseStrength = opacity;
-                            } else {
-                                // Dégradé linéaire de hardness à 1
-                                const fadeRange = 1 - hardness;
-                                const fadeProgress = (normalizedDist - hardness) / fadeRange;
-                                eraseStrength = opacity * (1 - fadeProgress);
-                            }
-                        }
-
-                        // Réduire l'alpha du pixel (effacer)
-                        const currentAlpha = data[idx + 3];
-                        const newAlpha = currentAlpha * (1 - eraseStrength);
-                        data[idx + 3] = Math.max(0, Math.round(newAlpha));
-                    }
-                }
-            }
+            ctx.restore();
         }
-
-        // Remettre les données modifiées sur le canvas
-        ctx.putImageData(imageData, minX, minY);
     }
 
     /**
