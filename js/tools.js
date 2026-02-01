@@ -83,7 +83,9 @@ class ToolManager {
         const cursors = {
             move: 'move',
             select: 'crosshair',
+            'select-ellipse': 'crosshair',
             lasso: 'crosshair',
+            'lasso-polygon': 'crosshair',
             'magic-wand': 'crosshair',
             bucket: 'crosshair',
             gradient: 'crosshair',
@@ -173,7 +175,7 @@ class ToolManager {
         // Afficher les options pertinentes
         const brushTools = ['brush', 'eraser', 'clone'];
         const shapeTools = ['line', 'rectangle', 'ellipse'];
-        const selectionTools = ['select', 'lasso', 'magic-wand'];
+        const selectionTools = ['select', 'select-ellipse', 'lasso', 'lasso-polygon', 'magic-wand'];
 
         if (brushTools.includes(this.currentTool)) {
             document.getElementById('brush-options').style.display = 'block';
@@ -291,12 +293,36 @@ class ToolManager {
                 this.createTempCanvas();
                 break;
             case 'select':
-                this.selection = { x: pos.x, y: pos.y, width: 0, height: 0 };
+                this.selection = { x: pos.x, y: pos.y, width: 0, height: 0, type: 'rectangle' };
+                break;
+            case 'select-ellipse':
+                this.selection = { x: pos.x, y: pos.y, width: 0, height: 0, type: 'ellipse' };
                 break;
             case 'lasso':
                 this.lassoPoints = [{ x: pos.x, y: pos.y }];
                 this.app.selectionMask = null;
                 this.app.selectionPath = null;
+                break;
+            case 'lasso-polygon':
+                // Lasso polygonal : clic = ajouter point, double-clic = fermer
+                const now = Date.now();
+                const isDoubleClick = (now - (this._lastPolygonClickTime || 0)) < 300;
+                this._lastPolygonClickTime = now;
+
+                if (isDoubleClick && this.polygonPoints && this.polygonPoints.length >= 3) {
+                    // Double-clic : finaliser le lasso polygonal
+                    this.finalizePolygonLasso();
+                } else if (!this.polygonPoints || this.polygonPoints.length === 0) {
+                    // Premier point
+                    this.polygonPoints = [{ x: pos.x, y: pos.y }];
+                    this.app.selectionMask = null;
+                    this.app.selectionPath = null;
+                } else {
+                    // Ajouter un nouveau point
+                    this.polygonPoints.push({ x: pos.x, y: pos.y });
+                }
+                this.isDrawing = false; // Pas de drag continu
+                this.app.render();
                 break;
             case 'magic-wand':
                 this.magicWandSelect(pos.x, pos.y);
@@ -359,12 +385,19 @@ class ToolManager {
                 this.drawGradient(this.startX, this.startY, pos.x, pos.y);
                 break;
             case 'select':
+            case 'select-ellipse':
                 this.updateSelection(pos.x, pos.y);
                 break;
             case 'lasso':
                 if (this.lassoPoints.length > 0) {
                     this.lassoPoints.push({ x: pos.x, y: pos.y });
                     this.app.renderLassoPreview(this.lassoPoints);
+                }
+                break;
+            case 'lasso-polygon':
+                // Afficher l'aperçu du polygone avec la ligne vers le curseur
+                if (this.polygonPoints && this.polygonPoints.length > 0) {
+                    this.app.renderPolygonLassoPreview(this.polygonPoints, pos.x, pos.y);
                 }
                 break;
             case 'crop':
@@ -409,6 +442,7 @@ class ToolManager {
                 this.app.saveHistory('Tampon');
                 break;
             case 'eraser':
+                this.resetEraseLockNotification();
                 this.app.saveHistory('Gomme');
                 break;
             case 'line':
@@ -432,10 +466,14 @@ class ToolManager {
                 this.app.saveHistory('Dégradé');
                 break;
             case 'select':
+            case 'select-ellipse':
                 this.finalizeSelection();
                 break;
             case 'lasso':
                 this.finalizeLasso();
+                break;
+            case 'lasso-polygon':
+                // Le lasso polygonal se finalise par double-clic
                 break;
             case 'crop':
                 this.showCropOverlay();
@@ -520,20 +558,30 @@ class ToolManager {
 
     /**
      * Effacer (gomme) - fonctionne comme le pinceau mais en mode effacement
+     * Respecte le système de calques :
+     * - Calque de fond : remplace par la couleur d'arrière-plan
+     * - Calque normal : efface vers la transparence (révèle ce qu'il y a dessous)
+     * - Calque verrouillé : bloqué avec message
      */
     erase(x1, y1, x2, y2) {
         const layer = this.app.layerManager.getActiveLayer();
         if (!layer) return;
+
+        // Vérifier si le calque est verrouillé (mais pas fond)
+        if (layer.locked && !layer.isBackground) {
+            // Afficher message seulement au premier appel du trait
+            if (!this._eraseLockNotified) {
+                this.app.showToast('Ce calque est verrouillé');
+                this._eraseLockNotified = true;
+            }
+            return;
+        }
 
         const ctx = layer.ctx;
         const size = this.options.brushSize;
         const radius = size / 2;
         const hardness = this.options.brushHardness / 100;
         const opacity = this.options.brushOpacity / 100;
-
-        // Vérifier si c'est le calque de fond (premier calque ou nommé "Arrière-plan")
-        const layerIndex = this.app.layerManager.activeLayerIndex;
-        const isBackgroundLayer = layerIndex === 0 || layer.name === 'Arrière-plan';
 
         // Interpoler les points entre les deux positions pour un tracé fluide
         const points = Utils.getLinePoints(
@@ -545,8 +593,9 @@ class ToolManager {
         for (const point of points) {
             ctx.save();
 
-            if (isBackgroundLayer) {
-                // Sur le calque de fond: remplir avec la couleur de fond
+            if (layer.isBackground) {
+                // Calque de fond : remplacer par la couleur d'arrière-plan
+                // (ne peut pas effacer vers la transparence)
                 ctx.globalCompositeOperation = 'source-over';
                 const bgColor = this.options.backgroundColor;
                 const rgb = Utils.hexToRgb(bgColor);
@@ -562,7 +611,8 @@ class ToolManager {
 
                 ctx.fillStyle = gradient;
             } else {
-                // Sur les autres calques: effacer vers la transparence
+                // Calque normal : effacer vers la transparence
+                // Cela révèle les calques en dessous ou le damier de transparence
                 ctx.globalCompositeOperation = 'destination-out';
 
                 const gradient = ctx.createRadialGradient(
@@ -583,6 +633,13 @@ class ToolManager {
 
             ctx.restore();
         }
+    }
+
+    /**
+     * Réinitialiser le flag de notification de verrouillage (appelé à mouseUp)
+     */
+    resetEraseLockNotification() {
+        this._eraseLockNotified = false;
     }
 
     /**
@@ -771,7 +828,7 @@ class ToolManager {
     }
 
     /**
-     * Finaliser la sélection
+     * Finaliser la sélection (rectangulaire ou elliptique)
      */
     finalizeSelection() {
         if (!this.selection) return;
@@ -786,7 +843,98 @@ class ToolManager {
             this.selection.height = Math.abs(this.selection.height);
         }
 
+        // Pour la sélection elliptique, créer un masque
+        if (this.selection.type === 'ellipse') {
+            const layer = this.app.layerManager.getActiveLayer();
+            if (!layer) return;
+
+            const maskCanvas = document.createElement('canvas');
+            maskCanvas.width = layer.canvas.width;
+            maskCanvas.height = layer.canvas.height;
+            const maskCtx = maskCanvas.getContext('2d');
+
+            // Dessiner l'ellipse dans le masque
+            const centerX = this.selection.x + this.selection.width / 2;
+            const centerY = this.selection.y + this.selection.height / 2;
+            const radiusX = this.selection.width / 2;
+            const radiusY = this.selection.height / 2;
+
+            maskCtx.fillStyle = 'white';
+            maskCtx.beginPath();
+            maskCtx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+            maskCtx.fill();
+
+            // Appliquer le contour progressif
+            const feather = this.options.feather || 0;
+            if (feather > 0) {
+                this.applyFeatherToMask(maskCanvas, feather);
+            }
+
+            this.app.selectionMask = maskCanvas;
+            this.app.selectionPath = null;
+        }
+
         this.app.setSelection(this.selection);
+    }
+
+    /**
+     * Finaliser le lasso polygonal (appelé par double-clic)
+     */
+    finalizePolygonLasso() {
+        if (!this.polygonPoints || this.polygonPoints.length < 3) {
+            this.polygonPoints = [];
+            return;
+        }
+
+        // Calculer le rectangle englobant
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const p of this.polygonPoints) {
+            minX = Math.min(minX, p.x);
+            minY = Math.min(minY, p.y);
+            maxX = Math.max(maxX, p.x);
+            maxY = Math.max(maxY, p.y);
+        }
+
+        const width = Math.ceil(maxX - minX);
+        const height = Math.ceil(maxY - minY);
+        if (width <= 0 || height <= 0) return;
+
+        // Créer le masque de sélection
+        const layer = this.app.layerManager.getActiveLayer();
+        if (!layer) return;
+
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = layer.canvas.width;
+        maskCanvas.height = layer.canvas.height;
+        const maskCtx = maskCanvas.getContext('2d');
+
+        // Remplir le chemin du polygone
+        maskCtx.fillStyle = 'white';
+        maskCtx.beginPath();
+        maskCtx.moveTo(this.polygonPoints[0].x, this.polygonPoints[0].y);
+        for (let i = 1; i < this.polygonPoints.length; i++) {
+            maskCtx.lineTo(this.polygonPoints[i].x, this.polygonPoints[i].y);
+        }
+        maskCtx.closePath();
+        maskCtx.fill();
+
+        // Appliquer le contour progressif
+        const feather = this.options.feather || 0;
+        if (feather > 0) {
+            this.applyFeatherToMask(maskCanvas, feather);
+        }
+
+        // Stocker la sélection
+        this.app.selectionMask = maskCanvas;
+        this.app.selectionPath = [...this.polygonPoints];
+        this.app.setSelection({
+            x: Math.floor(minX),
+            y: Math.floor(minY),
+            width: width,
+            height: height
+        });
+
+        this.polygonPoints = [];
     }
 
     /**

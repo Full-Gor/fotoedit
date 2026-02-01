@@ -1648,7 +1648,8 @@ class FotoEditApp {
             x: Math.min(rect.x, rect.x + rect.width),
             y: Math.min(rect.y, rect.y + rect.height),
             width: Math.abs(rect.width),
-            height: Math.abs(rect.height)
+            height: Math.abs(rect.height),
+            type: rect.type || 'rectangle'  // Préserver le type (rectangle ou ellipse)
         };
     }
 
@@ -1690,11 +1691,35 @@ class FotoEditApp {
             }
             ctx.closePath();
             ctx.stroke();
+        } else if (sel.type === 'ellipse') {
+            // Sélection elliptique
+            const centerX = sel.x + sel.width / 2;
+            const centerY = sel.y + sel.height / 2;
+            const radiusX = sel.width / 2;
+            const radiusY = sel.height / 2;
+
+            // Bordure blanche en dessous
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Bordure noire en pointillés par-dessus (marching ants)
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 4]);
+            ctx.lineDashOffset = -(Date.now() / 80) % 10;
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+            ctx.stroke();
         } else {
             // Sélection rectangulaire standard
             // Bordure blanche en dessous
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.lineWidth = 1.5;
+            ctx.setLineDash([]);
             ctx.strokeRect(sel.x, sel.y, sel.width, sel.height);
 
             // Bordure noire en pointillés par-dessus (marching ants)
@@ -1750,6 +1775,80 @@ class FotoEditApp {
         ctx.moveTo(points[points.length - 1].x, points[points.length - 1].y);
         ctx.lineTo(points[0].x, points[0].y);
         ctx.stroke();
+
+        ctx.restore();
+    }
+
+    /**
+     * Dessiner l'aperçu du lasso polygonal
+     */
+    renderPolygonLassoPreview(points, cursorX, cursorY) {
+        if (!points || points.length < 1) return;
+
+        this.render();
+        const ctx = this.mainCanvas.getContext('2d');
+
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        // Dessiner les lignes existantes du polygone (blanc)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.stroke();
+
+        // Dessiner les lignes existantes (pointillés noirs par dessus)
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.lineDashOffset = -(Date.now() / 80) % 8;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.stroke();
+
+        // Ligne du dernier point vers le curseur (preview)
+        ctx.strokeStyle = 'rgba(0, 120, 212, 0.8)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(points[points.length - 1].x, points[points.length - 1].y);
+        ctx.lineTo(cursorX, cursorY);
+        ctx.stroke();
+
+        // Ligne du curseur vers le point de départ (fermeture preview)
+        ctx.strokeStyle = 'rgba(0, 120, 212, 0.4)';
+        ctx.beginPath();
+        ctx.moveTo(cursorX, cursorY);
+        ctx.lineTo(points[0].x, points[0].y);
+        ctx.stroke();
+
+        // Dessiner les points du polygone
+        ctx.fillStyle = 'white';
+        ctx.strokeStyle = '#0078d4';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        for (const point of points) {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // Indicateur au premier point (pour fermer)
+        if (points.length >= 3) {
+            ctx.fillStyle = 'rgba(0, 120, 212, 0.3)';
+            ctx.beginPath();
+            ctx.arc(points[0].x, points[0].y, 8, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         ctx.restore();
     }

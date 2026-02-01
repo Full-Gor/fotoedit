@@ -29,7 +29,7 @@ class LayerManager {
     /**
      * Créer un nouveau calque
      */
-    createLayer(name = null, index = null) {
+    createLayer(name = null, index = null, isBackground = false) {
         const canvas = document.createElement('canvas');
         canvas.width = this.width;
         canvas.height = this.height;
@@ -44,7 +44,9 @@ class LayerManager {
             opacity: 100,
             blendMode: 'normal',
             mask: null,
-            maskEnabled: false
+            maskEnabled: false,
+            isBackground: isBackground,
+            locked: isBackground  // Le fond est verrouillé par défaut
         };
 
         if (index !== null && index >= 0 && index <= this.layers.length) {
@@ -63,7 +65,7 @@ class LayerManager {
      * Créer un calque avec un fond
      */
     createBackgroundLayer(color = '#ffffff') {
-        const layer = this.createLayer('Arrière-plan');
+        const layer = this.createLayer('Arrière-plan', null, true);
         if (color !== 'transparent') {
             layer.ctx.fillStyle = color;
             layer.ctx.fillRect(0, 0, this.width, this.height);
@@ -282,6 +284,43 @@ class LayerManager {
             this.layers[index].name = name;
             this.notify();
         }
+    }
+
+    /**
+     * Verrouiller/déverrouiller un calque
+     */
+    toggleLock(index = this.activeLayerIndex) {
+        if (index >= 0 && index < this.layers.length) {
+            this.layers[index].locked = !this.layers[index].locked;
+            this.notify();
+        }
+    }
+
+    /**
+     * Convertir le calque de fond en calque normal
+     */
+    convertBackgroundToLayer(index = this.activeLayerIndex) {
+        if (index >= 0 && index < this.layers.length) {
+            const layer = this.layers[index];
+            if (layer.isBackground) {
+                layer.isBackground = false;
+                layer.locked = false;
+                layer.name = 'Calque 0';
+                this.notify();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Vérifier si un calque est verrouillé ou est un fond
+     */
+    isLayerLocked(index = this.activeLayerIndex) {
+        if (index >= 0 && index < this.layers.length) {
+            return this.layers[index].locked || this.layers[index].isBackground;
+        }
+        return true;
     }
 
     /**
