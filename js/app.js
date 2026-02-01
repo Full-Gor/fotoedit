@@ -121,6 +121,48 @@ class FotoEditApp {
             });
         }
 
+        // Mobile - Toolbar toggle
+        const mobileToolbarToggle = document.getElementById('mobile-toolbar-toggle');
+        const toolbarLeft = document.getElementById('toolbar-left');
+        const mobileToolbarOverlay = document.getElementById('mobile-toolbar-overlay');
+
+        if (mobileToolbarToggle && toolbarLeft) {
+            mobileToolbarToggle.addEventListener('click', () => {
+                toolbarLeft.classList.toggle('visible');
+                mobileToolbarOverlay.classList.toggle('visible');
+                mobileToolbarToggle.classList.toggle('toolbar-open');
+            });
+        }
+
+        if (mobileToolbarOverlay) {
+            mobileToolbarOverlay.addEventListener('click', () => {
+                toolbarLeft.classList.remove('visible');
+                mobileToolbarOverlay.classList.remove('visible');
+                mobileToolbarToggle.classList.remove('toolbar-open');
+            });
+        }
+
+        // Mobile - Bottom toolbar
+        document.querySelectorAll('.mobile-tool-btn[data-tool]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tool = btn.dataset.tool;
+                this.toolManager.setTool(tool);
+                // Mettre à jour l'état actif
+                document.querySelectorAll('.mobile-tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // Mettre à jour aussi la toolbar principale
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                const mainBtn = document.querySelector(`.tool-btn[data-tool="${tool}"]`);
+                if (mainBtn) mainBtn.classList.add('active');
+            });
+        });
+
+        // Mobile - Undo button
+        const mobileUndo = document.getElementById('mobile-undo');
+        if (mobileUndo) {
+            mobileUndo.addEventListener('click', () => this.undo());
+        }
+
         // Fermer les menus quand on clique sur un bouton du dropdown (mobile)
         document.querySelectorAll('.menu .dropdown button').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -310,6 +352,21 @@ class FotoEditApp {
                 btn.classList.add('active');
                 this.toolManager.setTool(btn.dataset.tool);
                 this.updateCurrentTool(btn.dataset.tool);
+
+                // Synchroniser avec la toolbar mobile
+                document.querySelectorAll('.mobile-tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
+                const mobileBtn = document.querySelector(`.mobile-tool-btn[data-tool="${btn.dataset.tool}"]`);
+                if (mobileBtn) mobileBtn.classList.add('active');
+
+                // Fermer la sidebar outils sur mobile après sélection
+                const toolbarLeft = document.getElementById('toolbar-left');
+                const mobileToolbarOverlay = document.getElementById('mobile-toolbar-overlay');
+                const mobileToolbarToggle = document.getElementById('mobile-toolbar-toggle');
+                if (toolbarLeft && window.innerWidth <= 768) {
+                    toolbarLeft.classList.remove('visible');
+                    if (mobileToolbarOverlay) mobileToolbarOverlay.classList.remove('visible');
+                    if (mobileToolbarToggle) mobileToolbarToggle.classList.remove('toolbar-open');
+                }
             });
         });
 

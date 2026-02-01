@@ -531,6 +531,10 @@ class ToolManager {
         const hardness = this.options.brushHardness / 100;
         const opacity = this.options.brushOpacity / 100;
 
+        // Vérifier si c'est le calque de fond (premier calque ou nommé "Arrière-plan")
+        const layerIndex = this.app.layerManager.activeLayerIndex;
+        const isBackgroundLayer = layerIndex === 0 || layer.name === 'Arrière-plan';
+
         // Interpoler les points entre les deux positions pour un tracé fluide
         const points = Utils.getLinePoints(
             Math.round(x1), Math.round(y1),
@@ -540,21 +544,39 @@ class ToolManager {
         // Pour chaque point, dessiner un cercle d'effacement
         for (const point of points) {
             ctx.save();
-            ctx.globalCompositeOperation = 'destination-out';
 
-            // Créer un gradient radial pour simuler la dureté
-            const gradient = ctx.createRadialGradient(
-                point.x, point.y, 0,
-                point.x, point.y, radius
-            );
+            if (isBackgroundLayer) {
+                // Sur le calque de fond: remplir avec la couleur de fond
+                ctx.globalCompositeOperation = 'source-over';
+                const bgColor = this.options.backgroundColor;
+                const rgb = Utils.hexToRgb(bgColor);
 
-            // Le gradient simule la dureté: centre opaque, bords flous si dureté < 100%
-            const innerRadius = Math.max(0.01, hardness);
-            gradient.addColorStop(0, `rgba(0, 0, 0, ${opacity})`);
-            gradient.addColorStop(innerRadius, `rgba(0, 0, 0, ${opacity})`);
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                const gradient = ctx.createRadialGradient(
+                    point.x, point.y, 0,
+                    point.x, point.y, radius
+                );
+                const innerRadius = Math.max(0.01, hardness);
+                gradient.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`);
+                gradient.addColorStop(innerRadius, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`);
+                gradient.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
 
-            ctx.fillStyle = gradient;
+                ctx.fillStyle = gradient;
+            } else {
+                // Sur les autres calques: effacer vers la transparence
+                ctx.globalCompositeOperation = 'destination-out';
+
+                const gradient = ctx.createRadialGradient(
+                    point.x, point.y, 0,
+                    point.x, point.y, radius
+                );
+                const innerRadius = Math.max(0.01, hardness);
+                gradient.addColorStop(0, `rgba(0, 0, 0, ${opacity})`);
+                gradient.addColorStop(innerRadius, `rgba(0, 0, 0, ${opacity})`);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = gradient;
+            }
+
             ctx.beginPath();
             ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
             ctx.fill();

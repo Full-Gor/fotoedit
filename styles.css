@@ -1572,3 +1572,180 @@ input[type="range"]::-moz-range-thumb {
         min-height: 36px;
     }
 }
+
+/* ==========================================
+   MOBILE SIDEBARS ET BOTTOM TOOLBAR
+   ========================================== */
+
+/* Bouton toggle barre d'outils mobile */
+.mobile-toolbar-toggle {
+    display: none;
+    position: fixed;
+    left: 10px;
+    bottom: 70px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    font-size: 18px;
+    z-index: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+}
+
+.mobile-toolbar-toggle:active {
+    transform: scale(0.95);
+}
+
+/* Overlay barre d'outils mobile */
+.mobile-toolbar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 450;
+}
+
+.mobile-toolbar-overlay.visible {
+    display: block;
+}
+
+/* Barre d'outils en bas pour mobile */
+.mobile-bottom-toolbar {
+    display: none;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 60px;
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    z-index: 500;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 10px;
+}
+
+.mobile-tool-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mobile-tool-btn:hover,
+.mobile-tool-btn:active {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.mobile-tool-btn.active {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+/* Mobile: afficher les éléments mobiles */
+@media (max-width: 768px) {
+    .mobile-toolbar-toggle {
+        display: flex;
+    }
+
+    .mobile-bottom-toolbar {
+        display: flex;
+    }
+
+    /* Ajuster le workspace pour la barre du bas */
+    .main-container {
+        height: calc(100vh - var(--menu-height) - 60px);
+    }
+
+    /* Cacher la status bar sur mobile */
+    .status-bar {
+        display: none;
+    }
+
+    /* Barre d'outils gauche - slide in */
+    .toolbar-left {
+        position: fixed;
+        left: -80px;
+        top: var(--menu-height);
+        bottom: 60px;
+        width: 70px;
+        z-index: 500;
+        transition: left 0.3s ease;
+        background-color: var(--bg-secondary);
+        border-right: 1px solid var(--border-color);
+        overflow-y: auto;
+    }
+
+    .toolbar-left.visible {
+        left: 0;
+    }
+
+    /* Workspace sans la toolbar */
+    .main-container {
+        grid-template-columns: 1fr;
+    }
+
+    /* Ajuster le bouton toggle quand la toolbar est ouverte */
+    .toolbar-left.visible ~ .mobile-toolbar-toggle,
+    .mobile-toolbar-toggle.toolbar-open {
+        left: 80px;
+    }
+}
+
+@media (max-width: 600px) {
+    .mobile-toolbar-toggle {
+        width: 46px;
+        height: 46px;
+        bottom: 68px;
+    }
+
+    .mobile-bottom-toolbar {
+        height: 56px;
+    }
+
+    .mobile-tool-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 16px;
+    }
+
+    .toolbar-left {
+        width: 60px;
+        left: -70px;
+    }
+
+    .toolbar-left.visible ~ .mobile-toolbar-toggle,
+    .mobile-toolbar-toggle.toolbar-open {
+        left: 70px;
+    }
+}
+
+@media (max-width: 400px) {
+    .mobile-tool-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 14px;
+    }
+
+    .mobile-bottom-toolbar {
+        height: 52px;
+        padding: 0 5px;
+    }
+}

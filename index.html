@@ -95,9 +95,17 @@
         <!-- Overlay pour menu mobile -->
         <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
 
+        <!-- Overlay pour barre d'outils mobile -->
+        <div class="mobile-toolbar-overlay" id="mobile-toolbar-overlay"></div>
+
         <div class="main-container">
+            <!-- Bouton toggle barre d'outils mobile -->
+            <button class="mobile-toolbar-toggle" id="mobile-toolbar-toggle" title="Outils">
+                <i class="fas fa-tools"></i>
+            </button>
+
             <!-- Barre d'outils gauche -->
-            <aside class="toolbar-left">
+            <aside class="toolbar-left" id="toolbar-left">
                 <div class="tool-group">
                     <button class="tool-btn active" data-tool="move" title="Déplacer (Ctrl+V)">
                         <i class="fas fa-arrows-alt"></i>
@@ -347,6 +355,28 @@
                 </div>
             </aside>
         </div>
+
+        <!-- Barre d'outils mobile en bas -->
+        <nav class="mobile-bottom-toolbar" id="mobile-bottom-toolbar">
+            <button class="mobile-tool-btn" data-tool="move" title="Déplacer">
+                <i class="fas fa-arrows-alt"></i>
+            </button>
+            <button class="mobile-tool-btn" data-tool="brush" title="Pinceau">
+                <i class="fas fa-paint-brush"></i>
+            </button>
+            <button class="mobile-tool-btn" data-tool="eraser" title="Gomme">
+                <i class="fas fa-eraser"></i>
+            </button>
+            <button class="mobile-tool-btn" data-tool="select" title="Sélection">
+                <i class="far fa-square"></i>
+            </button>
+            <button class="mobile-tool-btn" data-tool="text" title="Texte">
+                <i class="fas fa-font"></i>
+            </button>
+            <button class="mobile-tool-btn" id="mobile-undo" title="Annuler">
+                <i class="fas fa-undo"></i>
+            </button>
+        </nav>
 
         <!-- Barre d'état -->
         <footer class="status-bar">
